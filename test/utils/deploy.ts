@@ -3,17 +3,15 @@ import { ethers, waffle } from "hardhat";
 import { Signer, BigNumberish, utils, BigNumber } from "ethers";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { CTOKEN } from "./config";
-import { CTokenType } from "./enums";
+import { CTokenType, InterestRateModelType } from "./enums";
 import {
-  CErc20Args,
-  CErc20DelegatorArgs,
-  CEthArgs,
   CompoundV2,
   CTokenArgs,
   CTokenDeployArg,
   CTokenLike,
   CTokens,
   InterestRateModelConfig,
+  InterestRateModelConfigs,
   InterestRateModels,
   JumpRateModelV2Args,
   LegacyJumpRateModelV2Args,
@@ -37,6 +35,7 @@ import {
   Comptroller__factory,
   ERC20PresetFixedSupply,
   InterestRateModel,
+  JumpRateModelV2,
   JumpRateModelV2__factory,
   PriceOracle,
   SimplePriceOracle,
@@ -45,6 +44,8 @@ import {
   WhitePaperInterestRateModel,
   WhitePaperInterestRateModel__factory,
 } from "../../typechain";
+import { Artifact } from "hardhat/types";
+import { ZkSyncArtifact } from "@matterlabs/hardhat-zksync-solc/dist/src/types";
 
 export async function deployERC20(
   deployer: Deployer,
@@ -94,17 +95,17 @@ export async function deployComptroller(
 }
 
 export async function deployBaseJumpRateModelV2(
-  deployer: Deployer
-): Promise<BaseJumpRateModelV2> {
-  // Compound's https://etherscan.io/tx/0x3f88778f6f5b417ccc5c63301cf982b3ca90c6428229ce789d0f5a1a4e9a20c0#eventlog
-  const artifact = await deployer.loadArtifact("JumpRateModelV2");
+  deployer: Deployer,
+  interestRateModelConfig: InterestRateModelConfig
+): Promise<JumpRateModelV2> {
+  let artifact = await deployer.loadArtifact("JumpRateModelV2");
   return (await deployer.deploy(artifact, [
-    BigInt("0"), // baseRatePerBlock
-    BigInt("23782343987"), // multiplierPerBlock
-    BigInt("518455098934"), // jumpMultiplierPerBlock
-    BigInt("800000000000000000"), // kink
-    deployer.zkWallet.address,
-  ])) as BaseJumpRateModelV2;
+    BigInt(interestRateModelConfig.args.baseRatePerYear), // baseRatePerYear
+    BigInt(interestRateModelConfig.args.multiplierPerYear), // multiplierPerYear
+    BigInt(interestRateModelConfig.args.jumpMultiplierPerYear), // jumpMultiplierPerYear
+    BigInt(interestRateModelConfig.args.kink), // kink_
+    deployer.zkWallet.address, // owner
+  ])) as JumpRateModelV2;
 }
 
 export async function deployCErc20Delegator(
@@ -130,7 +131,7 @@ export async function deployCErc20Delegator(
 }
 
 export async function deployCErc20Immutable(
-  args: CErc20Args,
+  args: CTokenArgs,
   deployer: Deployer
 ): Promise<CErc20Immutable> {
   const artifact = await deployer.loadArtifact("CErc20Immutable");
@@ -181,18 +182,17 @@ export async function deployCEth(
 
 export async function deployCTokens(
   config: CTokenDeployArg[],
-  irm: InterestRateModel,
   priceOracle: SimplePriceOracle,
   comptroller: Comptroller,
   deployer: Deployer
-): Promise<CTokenLike[]> {
-  const deployedCTokens: CTokenLike[] = [];
+): Promise<Record<string, CTokenLike>> {
+  const deployedCTokens: Record<string, CTokenLike> = {};
   for (const c of config) {
     const cTokenConf = CTOKEN[c.cToken];
 
     cTokenConf.args.comptroller = comptroller.address;
     cTokenConf.args.underlying = c.underlying || "0x00";
-    cTokenConf.args.interestRateModel = irm.address;
+    cTokenConf.args.interestRateModel = c.interestRateModel;
     cTokenConf.args.admin = deployer.zkWallet.address;
 
     // @dev
@@ -247,7 +247,7 @@ export async function deployCTokens(
       }: (${c.collateralFactor.toString()})`
     );
 
-    deployedCTokens.push(deployedCToken);
+    deployedCTokens[c.underlyingToken] = deployedCToken;
   }
   return deployedCTokens;
 }

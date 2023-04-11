@@ -9,18 +9,17 @@ import {
   transferERC20,
   distributeERC20,
   getETHBalance,
+  distributeETH,
 } from "./utils/helper";
 import { mine } from "@nomicfoundation/hardhat-network-helpers";
 
 import {
-  CErc20Args,
-  CErc20DelegatorArgs,
-  CEthArgs,
   CompoundV2,
   CTokenArgs,
   CTokenDeployArg,
   CTokenLike,
   CTokens,
+  ERC20Like,
   InterestRateModelConfig,
   InterestRateModels,
   JumpRateModelV2Args,
@@ -29,12 +28,13 @@ import {
 } from "./utils/interfaces";
 
 import {
-  deployBaseJumpRateModelV2,
+  deployBaseJumpRateModelV2 as deployJumpRateModelV2,
   deployCTokens,
   deployComptroller,
   deployERC20,
   deploySimplePriceOracle,
 } from "./utils/deploy";
+import { INTEREST_RATE_MODEL } from "./utils/config";
 import {
   Comptroller,
   ERC20PresetFixedSupply,
@@ -42,7 +42,13 @@ import {
   SimplePriceOracle,
   Comptroller__factory,
   Unitroller,
+  CEther__factory,
+  BaseJumpRateModelV2,
+  ERC20__factory,
+  ERC20Burnable__factory,
 } from "../typechain";
+import { getContractFactory } from "@nomiclabs/hardhat-ethers/types";
+import { expect } from "chai";
 
 const DEPLOYER_WALLET_PK =
   "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
@@ -72,10 +78,11 @@ describe("Deploy scenario", function () {
   // Compound
   let simplePriceOracle: SimplePriceOracle;
   let comptroller: Comptroller;
-  let baseJumpRateModelV2: InterestRateModel;
+  let baseJumpRateModelV2_ETH: BaseJumpRateModelV2;
+  let baseJumpRateModelV2_Stables: BaseJumpRateModelV2;
 
   // deployed CTokens
-  let cTokens: Array<CTokenLike>;
+  let cTokens: Record<string, CTokenLike>;
 
   async function fixture() {
     // deployer
@@ -90,13 +97,13 @@ describe("Deploy scenario", function () {
       deployer,
       "Tether USD",
       "USDT",
-      BigNumber.from(1000).mul(E18)
+      utils.parseEther("1000")
     );
     USDC = await deployERC20(
       deployer,
       "USD Coin ",
       "USDC",
-      BigNumber.from(1000).mul(E18)
+      utils.parseEther("1000")
     );
 
     console.log(`# ERC20 ${await USDT.symbol()} deployed at: ${USDT.address}`);
@@ -122,9 +129,21 @@ describe("Deploy scenario", function () {
       simplePriceOracle.address
     );
 
-    // deploy interest model
-    baseJumpRateModelV2 = await deployBaseJumpRateModelV2(deployer);
-    console.log(`# InterestModel deployed at: ${baseJumpRateModelV2.address}`);
+    // deploy interest models
+    baseJumpRateModelV2_ETH = await deployJumpRateModelV2(
+      deployer,
+      INTEREST_RATE_MODEL.IRM_ETH_Updateable
+    );
+    console.log(
+      `# BaseJumpRateModelV2_ETH deployed at: ${baseJumpRateModelV2_ETH.address}`
+    );
+    baseJumpRateModelV2_Stables = await deployJumpRateModelV2(
+      deployer,
+      INTEREST_RATE_MODEL.IRM_STABLES_Updateable
+    );
+    console.log(
+      `# BaseJumpRateModelV2_Stables deployed at: ${baseJumpRateModelV2_Stables.address}`
+    );
 
     // deploy cTokens
     let cTokenDeployArgs: CTokenDeployArg[] = [
@@ -132,29 +151,54 @@ describe("Deploy scenario", function () {
         underlyingToken: "USDT",
         cToken: "cUSDT",
         underlying: USDT.address,
-        underlyingPrice: BigNumber.from(1).mul(E18),
+        underlyingPrice: utils.parseEther("1"),
         collateralFactor: BigNumber.from(8).mul(E17), // 0.8
+        interestRateModel: baseJumpRateModelV2_ETH.address,
       },
       {
         underlyingToken: "USDC",
         cToken: "cUSDC",
         underlying: USDC.address,
-        underlyingPrice: BigNumber.from(1).mul(E18),
+        underlyingPrice: utils.parseEther("1"),
         collateralFactor: BigNumber.from(8).mul(E17), // 0.8
+        interestRateModel: baseJumpRateModelV2_Stables.address,
       },
       {
         underlyingToken: "ETH",
         cToken: "cETH",
-        underlyingPrice: BigNumber.from(3000).mul(E18),
+        underlyingPrice: utils.parseEther("1"),
         collateralFactor: BigNumber.from(6).mul(E17), // 0.6
+        interestRateModel: baseJumpRateModelV2_Stables.address,
       },
     ];
     cTokens = await deployCTokens(
       cTokenDeployArgs,
-      baseJumpRateModelV2,
       simplePriceOracle,
       comptrollerAsDeployer,
       deployer
+    );
+
+    // distribute 100 USDT to alice and bob
+    await distributeERC20(
+      USDT,
+      deployer.zkWallet,
+      [alice, bob],
+      [utils.parseEther("100"), utils.parseEther("100")]
+    );
+
+    // distribute 100 USDC to alice and bob
+    await distributeERC20(
+      USDC,
+      deployer.zkWallet,
+      [alice, bob],
+      [utils.parseEther("100"), utils.parseEther("100")]
+    );
+
+    // distribute 10 ETH to alice and bob
+    await distributeETH(
+      deployer.zkWallet,
+      [alice, bob],
+      [utils.parseEther("10"), utils.parseEther("10")]
     );
   }
 
@@ -163,63 +207,39 @@ describe("Deploy scenario", function () {
   });
 
   context("When everything is deployed", async () => {
-    it("Should allow deposit", async function () {
-      // distribute 100 USDC to alice and bob
-      await distributeERC20(
-        USDC,
-        deployer.zkWallet,
-        [alice, bob],
-        [BigNumber.from(100).mul(E18), BigNumber.from(100).mul(E18)]
-      );
+    it("Should have config ready", async function () {});
 
-      console.log("alice USDC", await getERC20Balance(USDC, alice));
-      console.log("bob USDC", await getERC20Balance(USDC, bob));
-
-      // distribute 10 ETH to alice and bob
-      await deployer.zkWallet.sendTransaction({
-        to: alice.address,
-        value: ethers.utils.parseEther("10"),
-      });
-      await deployer.zkWallet.sendTransaction({
-        to: bob.address,
-        value: ethers.utils.parseEther("10"),
-      });
-      // console.log("alice eth:", getETHBalance(alice));
-      // console.log("bob eth:", getETHBalance(bob));
-
+    it("Should allow deposit cERC20, cETH", async function () {
       // alice mint cUSDT
       await approveERC20(
         USDC,
         alice,
-        cTokens[1].address,
-        BigNumber.from(100).mul(E18)
+        cTokens["USDC"].address,
+        utils.parseEther("100")
       );
-      console.log("name", await cTokens[1].name());
-      console.log("cUSDC total supply", cTokens[1].totalSupply);
-      console.log(
-        "allowance",
-        await USDC.allowance(alice.address, cTokens[1].address),
-        await USDC.allowance(cTokens[1].address, alice.address)
-      );
-      console.log("alice minting cUSDC from underlying 10 USDC");
-      tx = await cTokens[1].connect(alice).mint(BigNumber.from(10).mul(E18));
+      // alice minting cUSDC from underlying 10 USDC
+      tx = await cTokens["USDC"].connect(alice).mint(utils.parseEther("10"));
       await tx.wait();
       console.log("alice USDC", await getERC20Balance(USDC, alice));
-      console.log(
-        "deployer USDC",
-        await getERC20Balance(USDC, deployer.zkWallet)
+      console.log("cUSDC total supply", await cTokens["USDC"].totalSupply());
+      expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("90"));
+      expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
+        utils.parseEther("10")
       );
-      console.log("cUSDC total supply", await cTokens[1].totalSupply());
 
-      console.log("alice minting cETH from underlying 1 ETH");
-      tx = await cTokens[2].connect(alice).mint(ethers.utils.parseEther("1"));
-      await tx.wait();
-      console.log("alice ETH", await getERC20Balance(USDC, alice));
-      console.log(
-        "deployer USDC",
-        await getERC20Balance(USDC, deployer.zkWallet)
+      // alice minting cETH from underlying 0.5 ETH
+      const cETHAsAlice = CEther__factory.connect(
+        cTokens["ETH"].address,
+        alice
       );
-      console.log("cUSDC total supply", await cTokens[1].totalSupply());
+      tx = await cETHAsAlice.mint({ value: utils.parseEther("0.5") });
+      await tx.wait();
+      expect(await getETHBalance(alice)).to.eq(utils.parseEther("0.5"));
+      expect(await getERC20Balance(cTokens["ETH"], alice)).to.eq(
+        utils.parseEther("")
+      );
     });
+
+    it("Should allow deposit", async function () {});
   });
 });

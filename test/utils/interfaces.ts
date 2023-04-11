@@ -41,17 +41,7 @@ export class CTokens {
 export type CTokenLike = CErc20 | CErc20Immutable | CErc20Delegator | CEther;
 export type ERC20Like = ERC20 | ERC20Burnable | ERC20PresetFixedSupply;
 
-export interface CEthArgs {
-  comptroller: string;
-  interestRateModel: string;
-  initialExchangeRateMantissa: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  admin: string;
-}
-
-export interface CErc20Args {
+export interface CTokenArgs {
   underlying: string;
   comptroller: string;
   interestRateModel: string;
@@ -62,12 +52,6 @@ export interface CErc20Args {
   admin: string;
   implementation?: string;
 }
-
-export interface CErc20DelegatorArgs extends CErc20Args {
-  implementation: string;
-}
-
-export type CTokenArgs = CErc20Args | CErc20DelegatorArgs;
 
 export type WhitePaperInterestRateModelArgs = {
   baseRatePerYear: string;
@@ -93,10 +77,7 @@ export interface InterestRateModelConfigs {
 export interface InterestRateModelConfig {
   name: string;
   type: InterestRateModelType;
-  args:
-    | WhitePaperInterestRateModelArgs
-    | LegacyJumpRateModelV2Args
-    | JumpRateModelV2Args;
+  args: LegacyJumpRateModelV2Args | JumpRateModelV2Args;
 }
 
 export interface CTokenConfigs {
@@ -106,8 +87,7 @@ export interface CTokenConfigs {
 export interface CTokenConfig {
   symbol: string;
   type: CTokenType;
-  args: CEthArgs | CErc20Args | CErc20DelegatorArgs;
-  interestRateModel: InterestRateModelConfig;
+  args: CTokenArgs;
 }
 
 export interface CTokenDeployArg {
@@ -116,4 +96,5 @@ export interface CTokenDeployArg {
   underlying?: string;
   underlyingPrice?: BigNumberish;
   collateralFactor: BigNumberish;
+  interestRateModel: string;
 }

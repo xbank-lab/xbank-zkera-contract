@@ -1,12 +1,12 @@
 import { Wallet } from "zksync-web3";
-import { ERC20Like } from "./interfaces";
+import { CTokenLike, ERC20Like } from "./interfaces";
 import { BigNumber } from "ethers";
 
 export async function getERC20Balance(
-  erc20: ERC20Like,
+  erc20: ERC20Like | CTokenLike,
   wallet: Wallet
-): Promise<string> {
-  return (await erc20.balanceOf(wallet.address)).toString();
+): Promise<BigNumber> {
+  return await erc20.balanceOf(wallet.address);
 }
 
 export async function transferERC20(
@@ -40,6 +40,19 @@ export async function approveERC20(
   await tx.wait();
 }
 
-export async function getETHBalance(wallet: Wallet): Promise<string> {
-  return (await wallet.provider.getBalance(wallet.address)).toString();
+export async function distributeETH(
+  fromWallet: Wallet,
+  toWallets: Array<Wallet>,
+  amounts: Array<BigNumber>
+): Promise<void> {
+  for (const [i, toWallet] of toWallets.entries()) {
+    await fromWallet.sendTransaction({
+      to: toWallet.address,
+      value: amounts[i],
+    });
+  }
+}
+
+export async function getETHBalance(wallet: Wallet): Promise<BigNumber> {
+  return await wallet.provider.getBalance(wallet.address);
 }

@@ -1,7 +1,7 @@
 export enum InterestRateModelType {
   WhitePaperInterestRateModel,
   JumpRateModelV2,
-  LegacyJumpRateModelV2,
+  BaseJumpRateModelV2,
 }
 
 export enum CTokenType {
