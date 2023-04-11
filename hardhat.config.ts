@@ -58,6 +58,11 @@ module.exports = {
       zksync: false,
     },
     zkSyncTestnet,
+    zkSyncMainnet: {
+      url: "https://mainnet.era.zksync.io",
+      ethNetwork: "mainnet",
+      zksync: true,
+    },
   },
   mocha: {
     timeout: 100000000,
