@@ -19,7 +19,7 @@ const chainIds = {
 };
 
 const zkSyncTestnet =
-  process.env.NODE_ENV == "test"
+  process.env.NODE_ENV == "local"
     ? {
         url: "http://localhost:3050",
         ethNetwork: "http://localhost:8545",
