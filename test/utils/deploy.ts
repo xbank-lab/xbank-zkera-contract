@@ -1,51 +1,25 @@
-import { Provider, Contract, Wallet } from "zksync-web3";
-import { ethers, waffle } from "hardhat";
-import { Signer, BigNumberish, utils, BigNumber } from "ethers";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { CTOKEN } from "./config";
-import { CTokenType, InterestRateModelType } from "./enums";
+import { BigNumberish } from "ethers";
+import { CTOKEN } from "../config/deployment_config";
+import { CTokenType } from "../../utils/enums";
+
 import {
-  CompoundV2,
   CTokenArgs,
   CTokenDeployArg,
   CTokenLike,
-  CTokens,
   InterestRateModelConfig,
-  InterestRateModelConfigs,
-  InterestRateModels,
-  JumpRateModelV2Args,
-  LegacyJumpRateModelV2Args,
-  WhitePaperInterestRateModelArgs,
 } from "./interfaces";
 
 import {
-  BaseJumpRateModelV2,
-  CErc20,
   CErc20Delegate,
-  CErc20Delegate__factory,
   CErc20Delegator,
-  CErc20Delegator__factory,
   CErc20Immutable,
-  CErc20Immutable__factory,
   CEther,
-  CEther__factory,
   Comptroller,
-  ComptrollerInterface,
-  ComptrollerInterface__factory,
-  Comptroller__factory,
   ERC20PresetFixedSupply,
-  InterestRateModel,
   JumpRateModelV2,
-  JumpRateModelV2__factory,
-  PriceOracle,
   SimplePriceOracle,
-  SimplePriceOracle__factory,
-  Unitroller,
-  WhitePaperInterestRateModel,
-  WhitePaperInterestRateModel__factory,
-} from "../../typechain";
-import { Artifact } from "hardhat/types";
-import { ZkSyncArtifact } from "@matterlabs/hardhat-zksync-solc/dist/src/types";
+} from "../typechain";
 
 export async function deployERC20(
   deployer: Deployer,

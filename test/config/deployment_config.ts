@@ -1,5 +1,8 @@
-import { CTokenType, InterestRateModelType } from "../utils/enums";
-import { CTokenConfigs, InterestRateModelConfigs } from "./interfaces";
+import { CTokenType, InterestRateModelType } from "../../utils/enums";
+import {
+  CTokenConfigs,
+  InterestRateModelConfigs,
+} from "../../utils/interfaces";
 
 export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
   IRM_ETH_Updateable: {

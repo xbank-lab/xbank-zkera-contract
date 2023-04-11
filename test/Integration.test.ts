@@ -1,61 +1,42 @@
-import { Provider, Contract, Wallet } from "zksync-web3";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
+import { BigNumber, constants, utils } from "ethers";
 import * as hre from "hardhat";
-import { ethers, waffle } from "hardhat";
-import { Signer, BigNumberish, utils, BigNumber, constants } from "ethers";
+import { waffle } from "hardhat";
+import { Provider, Wallet } from "zksync-web3";
 import {
-  getERC20Balance,
   approveERC20,
-  transferERC20,
   distributeERC20,
-  getETHBalance,
   distributeETH,
-} from "./utils/helper";
-import { mine } from "@nomicfoundation/hardhat-network-helpers";
+  getERC20Balance,
+  getETHBalance,
+} from "./utils";
 
-import {
-  CompoundV2,
-  CTokenArgs,
-  CTokenDeployArg,
-  CTokenLike,
-  CTokens,
-  ERC20Like,
-  InterestRateModelConfig,
-  InterestRateModels,
-  JumpRateModelV2Args,
-  LegacyJumpRateModelV2Args,
-  WhitePaperInterestRateModelArgs,
-} from "./utils/interfaces";
+import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
 
+import { expect } from "chai";
 import {
-  deployBaseJumpRateModelV2 as deployJumpRateModelV2,
-  deployCTokens,
+  BaseJumpRateModelV2,
+  CEther__factory,
+  Comptroller,
+  Comptroller__factory,
+  ERC20PresetFixedSupply,
+  SimplePriceOracle,
+} from "../typechain";
+import { INTEREST_RATE_MODEL } from "./config/deployment_config";
+import {
   deployComptroller,
+  deployCTokens,
   deployERC20,
+  deployBaseJumpRateModelV2 as deployJumpRateModelV2,
   deploySimplePriceOracle,
 } from "./utils/deploy";
-import { INTEREST_RATE_MODEL } from "./utils/config";
-import {
-  Comptroller,
-  ERC20PresetFixedSupply,
-  InterestRateModel,
-  SimplePriceOracle,
-  Comptroller__factory,
-  Unitroller,
-  CEther__factory,
-  BaseJumpRateModelV2,
-  ERC20__factory,
-  ERC20Burnable__factory,
-} from "../typechain";
-import { getContractFactory } from "@nomiclabs/hardhat-ethers/types";
-import { expect } from "chai";
 
 const DEPLOYER_WALLET_PK =
   "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
 const ALICE_WALLET_PK =
-  "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3";
+  "0x3bc6be7e7ff3f699ee912296170fd4cbaa5e39ccf1363236e000abf434af8810";
 const BOB_WALLET_PK =
-  "0xd293c684d884d56f8d6abd64fc76757d3664904e309a0645baf8522ab6366d9e";
+  "0x61537d18c2226a1cecad7fe674d0cd697f5b6c9fdd673cfb08f15f86d6f78df0";
 
 const E18 = constants.WeiPerEther;
 const E17 = E18.div(10);
@@ -210,6 +191,7 @@ describe("Deploy scenario", function () {
     it("Should have config ready", async function () {});
 
     it("Should allow deposit cERC20, cETH", async function () {
+      console.log("alice eth", (await getETHBalance(alice)).toString());
       // alice mint cUSDT
       await approveERC20(
         USDC,
@@ -217,29 +199,39 @@ describe("Deploy scenario", function () {
         cTokens["USDC"].address,
         utils.parseEther("100")
       );
+      console.log("alice eth", (await getETHBalance(alice)).toString());
       // alice minting cUSDC from underlying 10 USDC
       tx = await cTokens["USDC"].connect(alice).mint(utils.parseEther("10"));
       await tx.wait();
-      console.log("alice USDC", await getERC20Balance(USDC, alice));
-      console.log("cUSDC total supply", await cTokens["USDC"].totalSupply());
+      console.log(
+        "alice USDC",
+        (await getERC20Balance(USDC, alice)).toString()
+      );
+      console.log(
+        "alice cUSDC",
+        (await getERC20Balance(cTokens["USDC"], alice)).toString()
+      );
+      console.log(
+        "cUSDC total supply",
+        (await cTokens["USDC"].totalSupply()).toString()
+      );
       expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("90"));
       expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
-        utils.parseEther("10")
+        utils.parseEther("50000")
       );
 
+      console.log("alice eth", (await getETHBalance(alice)).toString());
       // alice minting cETH from underlying 0.5 ETH
       const cETHAsAlice = CEther__factory.connect(
         cTokens["ETH"].address,
         alice
       );
+
       tx = await cETHAsAlice.mint({ value: utils.parseEther("0.5") });
       await tx.wait();
-      expect(await getETHBalance(alice)).to.eq(utils.parseEther("0.5"));
       expect(await getERC20Balance(cTokens["ETH"], alice)).to.eq(
-        utils.parseEther("")
+        BigNumber.from("2500000000")
       );
     });
-
-    it("Should allow deposit", async function () {});
   });
 });

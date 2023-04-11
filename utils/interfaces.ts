@@ -12,7 +12,7 @@ import {
   ERC20PresetFixedSupply,
   SimplePriceOracle,
   WhitePaperInterestRateModel,
-} from "../../typechain";
+} from "../typechain";
 
 import { CTokenType, InterestRateModelType } from "./enums";
 
