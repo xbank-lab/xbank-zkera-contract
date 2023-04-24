@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["@types/node", "@types/chai", "@types/mocha"],
+  },
+  "files": [
+    // "types/chai-bignumber.d.ts", "typechain/index.d.ts"
+    "typechain/index.ts"
+  ]
+}
