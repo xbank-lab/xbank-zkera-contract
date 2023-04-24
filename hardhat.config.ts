@@ -8,6 +8,7 @@ import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-toolbox";
 import "@matterlabs/hardhat-zksync-chai-matchers";
+import "@matterlabs/hardhat-zksync-verify";
 
 const chainIds = {
   goerli: 5,
@@ -29,6 +30,8 @@ const zkSyncTestnet =
         url: "https://zksync2-testnet.zksync.dev",
         ethNetwork: "goerli",
         zksync: true,
+        verifyURL:
+          "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
       };
 
 module.exports = {
@@ -66,5 +69,8 @@ module.exports = {
   },
   mocha: {
     timeout: 100000000,
+  },
+  etherscan: {
+    apiKey: "", //<Your API key for Etherscan>,
   },
 };

@@ -8,17 +8,16 @@ import {
   Comptroller,
   Comptroller__factory,
   SimplePriceOracle,
-  SimplePriceOracle__factory,
 } from "../typechain";
 import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
+import { getConfig } from "./config/chain_config";
+import { INTEREST_RATE_MODEL } from "./config/deployment_config";
 import {
   deployBaseJumpRateModelV2,
   deployCTokens,
   deployComptroller,
   deploySimplePriceOracle,
 } from "./utils/deploy";
-import { getConfig } from "./config/chain_config";
-import { INTEREST_RATE_MODEL } from "./config/deployment_config";
 
 dotEnvConfig();
 
@@ -91,14 +90,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
       underlyingToken: "USDC",
       cToken: "cUSDC",
       underlying: USDC,
-      underlyingPrice: utils.parseEther("1"),
+      underlyingPrice: utils.parseEther("1"), // initial underlying price ($)
       collateralFactor: BigNumber.from(8).mul(E17), // 0.8
       interestRateModel: baseJumpRateModelV2_Stables.address,
     },
     {
       underlyingToken: "ETH",
       cToken: "cETH",
-      underlyingPrice: utils.parseEther("1"),
+      underlyingPrice: utils.parseEther("2000"), // initial underlying price ($)
       collateralFactor: BigNumber.from(6).mul(E17), // 0.6
       interestRateModel: baseJumpRateModelV2_ETH.address,
     },
