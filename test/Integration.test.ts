@@ -1,9 +1,11 @@
+import { parseEther } from "ethers/lib/utils";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { BigNumber, constants, utils } from "ethers";
 import * as hre from "hardhat";
 import { waffle } from "hardhat";
 import { Provider, Wallet } from "zksync-web3";
 import {
+  _simulateMintCErc20,
   approveERC20,
   distributeERC20,
   distributeETH,
@@ -14,6 +16,7 @@ import {
 import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
 
 import { expect } from "chai";
+
 import {
   BaseJumpRateModelV2,
   CEther__factory,
@@ -24,8 +27,8 @@ import {
 } from "../typechain";
 import { INTEREST_RATE_MODEL } from "./config/deployment_config";
 import {
-  deployComptroller,
   deployCTokens,
+  deployComptroller,
   deployERC20,
   deployBaseJumpRateModelV2 as deployJumpRateModelV2,
   deploySimplePriceOracle,
@@ -41,7 +44,7 @@ const BOB_WALLET_PK =
 const E18 = constants.WeiPerEther;
 const E17 = E18.div(10);
 
-describe("Deploy scenario", function () {
+describe("Protocol fundamentals", function () {
   // Providers
   const provider = Provider.getDefaultProvider();
 
@@ -78,13 +81,13 @@ describe("Deploy scenario", function () {
       deployer,
       "Tether USD",
       "USDT",
-      utils.parseEther("1000")
+      utils.parseEther("1000000")
     );
     USDC = await deployERC20(
       deployer,
       "USD Coin ",
       "USDC",
-      utils.parseEther("1000")
+      utils.parseEther("1000000")
     );
 
     console.log(`# ERC20 ${await USDT.symbol()} deployed at: ${USDT.address}`);
@@ -133,7 +136,7 @@ describe("Deploy scenario", function () {
         cToken: "cUSDT",
         underlying: USDT.address,
         underlyingPrice: utils.parseEther("1"),
-        collateralFactor: BigNumber.from(8).mul(E17), // 0.8
+        collateralFactor: BigNumber.from(8).mul(E17), // 80%
         interestRateModel: baseJumpRateModelV2_ETH.address,
       },
       {
@@ -141,14 +144,14 @@ describe("Deploy scenario", function () {
         cToken: "cUSDC",
         underlying: USDC.address,
         underlyingPrice: utils.parseEther("1"),
-        collateralFactor: BigNumber.from(8).mul(E17), // 0.8
+        collateralFactor: BigNumber.from(8).mul(E17), // 80%
         interestRateModel: baseJumpRateModelV2_Stables.address,
       },
       {
         underlyingToken: "ETH",
         cToken: "cETH",
-        underlyingPrice: utils.parseEther("1"),
-        collateralFactor: BigNumber.from(6).mul(E17), // 0.6
+        underlyingPrice: utils.parseEther("1500"),
+        collateralFactor: BigNumber.from(6).mul(E17), // 60%
         interestRateModel: baseJumpRateModelV2_Stables.address,
       },
     ];
@@ -159,23 +162,23 @@ describe("Deploy scenario", function () {
       deployer
     );
 
-    // distribute 100 USDT to alice and bob
+    // distribute 100e18 USDT to alice and bob
     await distributeERC20(
       USDT,
       deployer.zkWallet,
       [alice, bob],
-      [utils.parseEther("100"), utils.parseEther("100")]
+      [utils.parseEther("1000"), utils.parseEther("1000")]
     );
 
-    // distribute 100 USDC to alice and bob
+    // distribute 100e18 USDC to alice and bob
     await distributeERC20(
       USDC,
       deployer.zkWallet,
       [alice, bob],
-      [utils.parseEther("100"), utils.parseEther("100")]
+      [utils.parseEther("1000"), utils.parseEther("1000")]
     );
 
-    // distribute 10 ETH to alice and bob
+    // distribute 10e18 ETH to alice and bob
     await distributeETH(
       deployer.zkWallet,
       [alice, bob],
@@ -187,50 +190,147 @@ describe("Deploy scenario", function () {
     await waffle.loadFixture(fixture);
   });
 
-  context("When everything is deployed", async () => {
-    it("Should have config ready", async function () {});
+  context("Initial config", async () => {
+    it("Should have config ready", async function () {
+      // [check] Comptroller
+      const comptrollerAsDeployer = Comptroller__factory.connect(
+        comptroller.address,
+        deployer.zkWallet
+      );
+      expect(await comptrollerAsDeployer.isComptroller()).to.eq(true);
 
-    it("Should allow deposit cERC20, cETH", async function () {
-      console.log("alice eth", (await getETHBalance(alice)).toString());
-      // alice mint cUSDT
+      // [check] PriceOracle set correctly with correct prices
+      const comptrollerPriceOracle = await comptrollerAsDeployer.oracle();
+      expect(comptrollerPriceOracle).to.eq(simplePriceOracle.address);
+
+      const allMarkets = await comptrollerAsDeployer.getAllMarkets();
+      expect(allMarkets.length).to.eq(3);
+      expect(allMarkets).to.have.members([
+        cTokens["ETH"].address,
+        cTokens["USDC"].address,
+        cTokens["USDT"].address,
+      ]);
+      expect(
+        await simplePriceOracle.getUnderlyingPrice(cTokens["ETH"].address)
+      ).to.eq(utils.parseEther("1500"));
+      expect(
+        await simplePriceOracle.getUnderlyingPrice(cTokens["USDC"].address)
+      ).to.eq(utils.parseEther("1"));
+      expect(
+        await simplePriceOracle.getUnderlyingPrice(cTokens["USDT"].address)
+      ).to.eq(utils.parseEther("1"));
+
+      // [check] ETH listed with collateral factor 60%
+      const marketETH = await comptrollerAsDeployer.markets(
+        cTokens["ETH"].address
+      );
+      expect(marketETH.isListed).to.eq(true);
+      expect(marketETH.collateralFactorMantissa).to.eq(
+        BigNumber.from(6).mul(E17) // 80%
+      );
+
+      // [check] USDT listed with collateral factor 80%
+      const marketUSDC = await comptrollerAsDeployer.markets(
+        cTokens["USDC"].address
+      );
+      expect(marketUSDC.isListed).to.eq(true);
+      expect(marketUSDC.collateralFactorMantissa).to.eq(
+        BigNumber.from(8).mul(E17) // 80%
+      );
+
+      // [check] USDT listed with collateral factor 80%
+      const marketUSDT = await comptrollerAsDeployer.markets(
+        cTokens["USDT"].address
+      );
+      expect(marketUSDT.isListed).to.eq(true);
+      expect(marketUSDT.collateralFactorMantissa).to.eq(
+        BigNumber.from(8).mul(E17) // 80%
+      );
+    });
+  });
+
+  context("Mint Redeem", async () => {
+    it("Should allow mint cERC20 and cETH", async function () {
+      // alice approve 100e18 USDC
       await approveERC20(
         USDC,
         alice,
         cTokens["USDC"].address,
         utils.parseEther("100")
       );
-      console.log("alice eth", (await getETHBalance(alice)).toString());
-      // alice minting cUSDC from underlying 10 USDC
-      tx = await cTokens["USDC"].connect(alice).mint(utils.parseEther("10"));
+
+      // alice deposit 100e18 USDC, receiving 5000000000000000e8 cUSDC
+      tx = await cTokens["USDC"].connect(alice).mint(utils.parseEther("100"));
       await tx.wait();
-      console.log(
-        "alice USDC",
-        (await getERC20Balance(USDC, alice)).toString()
-      );
-      console.log(
-        "alice cUSDC",
-        (await getERC20Balance(cTokens["USDC"], alice)).toString()
-      );
-      console.log(
-        "cUSDC total supply",
-        (await cTokens["USDC"].totalSupply()).toString()
-      );
-      expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("90"));
+      // [check] alice balance should have 90e18 USDC, 500000000000000e8 cUSDC
+      expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("900"));
       expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
-        utils.parseEther("50000")
+        utils.parseUnits("5000000000000000", 8)
       );
 
-      console.log("alice eth", (await getETHBalance(alice)).toString());
-      // alice minting cETH from underlying 0.5 ETH
+      // alice deposit 0.5e18 ETH, receiving 25e8 cETH
       const cETHAsAlice = CEther__factory.connect(
         cTokens["ETH"].address,
         alice
       );
-
-      tx = await cETHAsAlice.mint({ value: utils.parseEther("0.5") });
+      tx = await cETHAsAlice.mint({ value: utils.parseEther("5") });
       await tx.wait();
+      // [check] alice balance should have 250e8 cETH
       expect(await getERC20Balance(cTokens["ETH"], alice)).to.eq(
-        BigNumber.from("2500000000")
+        utils.parseUnits("250", 8)
+      );
+    });
+
+    it("Should allow redeem cERC20 and cETH", async function () {
+      // alice approve all cUSDC to redeem
+      await approveERC20(
+        cTokens["USDC"],
+        alice,
+        cTokens["USDC"].address,
+        await getERC20Balance(cTokens["USDC"], alice)
+      );
+
+      // alice redeem 3000000000000000e8 cUSDC for 60e18 USDC
+      tx = await cTokens["USDC"]
+        .connect(alice)
+        .redeem(utils.parseUnits("3000000000000000", 8));
+      await tx.wait();
+      // [check] alice balance should have 900e18 + 60e18 = 960e18 USDC, 2000000000000000e8 cUSDC
+      expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("960"));
+      expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
+        utils.parseUnits("2000000000000000", 8)
+      );
+
+      // alice redeemUnderlying 20e18 USDC more
+      tx = await cTokens["USDC"]
+        .connect(alice)
+        .redeemUnderlying(utils.parseEther("20"));
+      await tx.wait();
+      // [check] alice balance should have 960e18 + 20e18 = 980e18USDC, 1000000000000000e8 cUSDC
+      expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("980"));
+      expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
+        utils.parseUnits("1000000000000000", 8)
+      );
+
+      // approve cETH to redeem
+      await approveERC20(
+        cTokens["ETH"],
+        alice,
+        cTokens["ETH"].address,
+        await getERC20Balance(cTokens["ETH"], alice)
+      );
+      // alice redeem 50e8 cETH for 1e18 ETH
+      const aliceETHBalanceBefore = await getETHBalance(alice);
+      tx = await cTokens["ETH"]
+        .connect(alice)
+        .redeem(utils.parseUnits("50", 8));
+      await tx.wait();
+      // [check] alice balance should have 250e8 - 50e8 = 200e8 cETH, and almost +1e18 ETH more
+      expect(await getERC20Balance(cTokens["ETH"], alice)).to.eq(
+        utils.parseUnits("200", 8)
+      );
+      expect(await getETHBalance(alice)).to.be.greaterThan(
+        aliceETHBalanceBefore.add(utils.parseEther("0.99"))
       );
     });
   });

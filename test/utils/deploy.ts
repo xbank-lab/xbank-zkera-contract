@@ -18,8 +18,10 @@ import {
   Comptroller,
   ERC20PresetFixedSupply,
   JumpRateModelV2,
+  Multicall,
   SimplePriceOracle,
 } from "../../typechain";
+import { ETH_ADDRESS } from "zksync-web3/build/src/utils";
 
 export async function deployERC20(
   deployer: Deployer,
@@ -34,6 +36,11 @@ export async function deployERC20(
     initialSupply,
     deployer.zkWallet.address,
   ])) as ERC20PresetFixedSupply;
+}
+
+export async function deployMulticall(deployer: Deployer): Promise<Multicall> {
+  const artifact = await deployer.loadArtifact("Multicall");
+  return (await deployer.deploy(artifact)) as Multicall;
 }
 
 export async function deploySimplePriceOracle(
@@ -196,7 +203,7 @@ export async function deployCTokens(
 
     if (cTokenConf.type === CTokenType.CEther) {
       await priceOracle.setDirectPrice(
-        deployedCToken.address,
+        "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
         c.underlyingPrice || 0
       );
     } else {
