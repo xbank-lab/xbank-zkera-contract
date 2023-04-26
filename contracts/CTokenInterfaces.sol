@@ -27,8 +27,8 @@ contract CTokenStorage {
      */
     uint8 public decimals;
 
-    // Maximum borrow rate that can ever be applied (.0005% / block)
-    uint internal constant borrowRateMaxMantissa = 0.0005e16;
+    // Maximum borrow rate that can ever be applied (.00005% / sec)
+    uint internal constant borrowRateMaxMantissa = 0.00005e16;
 
     // Maximum fraction of interest that can be set aside for reserves
     uint internal constant reserveFactorMaxMantissa = 1e18;
@@ -62,9 +62,10 @@ contract CTokenStorage {
     uint public reserveFactorMantissa;
 
     /**
-     * @notice Block number that interest was last accrued at
+     * @notice Timestamp that interest was last accrued at
+     * @dev Modified from accrualBlockNumber
      */
-    uint public accrualBlockNumber;
+    uint public accrualTimestamp;
 
     /**
      * @notice Accumulator of the total earned interest rate since the opening of the market

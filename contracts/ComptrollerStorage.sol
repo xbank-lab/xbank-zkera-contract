@@ -97,9 +97,9 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
         // The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
-
-        // The block number the index was last updated at
-        uint32 block;
+        // The timestamp the index was last updated at (updated from block)
+        // @dev Modified from block
+        uint32 timestamp;
     }
 
     /// @notice A list of all markets
@@ -139,8 +139,9 @@ contract ComptrollerV5Storage is ComptrollerV4Storage {
     /// @notice The portion of COMP that each contributor receives per block
     mapping(address => uint) public compContributorSpeeds;
 
-    /// @notice Last block at which a contributor's COMP rewards have been allocated
-    mapping(address => uint) public lastContributorBlock;
+    /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
+    /// @dev modified from lastContributorBlock
+    mapping(address => uint) public lastContributorTimestamp;
 }
 
 contract ComptrollerV6Storage is ComptrollerV5Storage {

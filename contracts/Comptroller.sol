@@ -962,7 +962,7 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _initializeMarket(address cToken) internal {
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        uint32 currentTimestamp = safe32(getTimestamp(), "timestamp timestamp exceeds 32 bits");
 
         CompMarketState storage supplyState = compSupplyState[cToken];
         CompMarketState storage borrowState = compBorrowState[cToken];
@@ -981,9 +981,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         }
 
         /*
-         * Update market state block numbers
+         * Update market state timestamps
          */
-         supplyState.block = borrowState.block = blockNumber;
+         supplyState.timestamp = borrowState.timestamp = currentTimestamp;
     }
 
 
@@ -1159,7 +1159,7 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         if (compSupplySpeeds[address(cToken)] != supplySpeed) {
             // Supply speed updated so let's update supply state to ensure that
             //  1. COMP accrued properly for the old speed, and
-            //  2. COMP accrued at the new speed starts after this block.
+            //  2. COMP accrued at the new speed starts after this timestamp.
             updateCompSupplyIndex(address(cToken));
 
             // Update speed and emit event
@@ -1170,7 +1170,7 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         if (compBorrowSpeeds[address(cToken)] != borrowSpeed) {
             // Borrow speed updated so let's update borrow state to ensure that
             //  1. COMP accrued properly for the old speed, and
-            //  2. COMP accrued at the new speed starts after this block.
+            //  2. COMP accrued at the new speed starts after this timestamp.
             Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
             updateCompBorrowIndex(address(cToken), borrowIndex);
 
@@ -1188,16 +1188,16 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     function updateCompSupplyIndex(address cToken) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplySpeed = compSupplySpeeds[cToken];
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        uint deltaBlocks = sub_(uint(blockNumber), uint(supplyState.block));
-        if (deltaBlocks > 0 && supplySpeed > 0) {
+        uint32 currentTimestamp = safe32(getTimestamp(), "timestamp exceeds 32 bits");
+        uint deltaTimestamp = sub_(uint(currentTimestamp), uint(supplyState.timestamp));
+        if (deltaTimestamp > 0 && supplySpeed > 0) {
             uint supplyTokens = CToken(cToken).totalSupply();
-            uint compAccrued = mul_(deltaBlocks, supplySpeed);
+            uint compAccrued = mul_(deltaTimestamp, supplySpeed);
             Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
             supplyState.index = safe224(add_(Double({mantissa: supplyState.index}), ratio).mantissa, "new index exceeds 224 bits");
-            supplyState.block = blockNumber;
-        } else if (deltaBlocks > 0) {
-            supplyState.block = blockNumber;
+            supplyState.timestamp = currentTimestamp;
+        } else if (deltaTimestamp > 0) {
+            supplyState.timestamp = currentTimestamp;
         }
     }
 
@@ -1209,16 +1209,16 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     function updateCompBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
         CompMarketState storage borrowState = compBorrowState[cToken];
         uint borrowSpeed = compBorrowSpeeds[cToken];
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        uint deltaBlocks = sub_(uint(blockNumber), uint(borrowState.block));
-        if (deltaBlocks > 0 && borrowSpeed > 0) {
+        uint32 timestamp = safe32(getTimestamp(), "timestamp exceeds 32 bits");
+        uint deltaTimestamp = sub_(uint(timestamp), uint(borrowState.timestamp));
+        if (deltaTimestamp > 0 && borrowSpeed > 0) {
             uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
-            uint compAccrued = mul_(deltaBlocks, borrowSpeed);
+            uint compAccrued = mul_(deltaTimestamp, borrowSpeed);
             Double memory ratio = borrowAmount > 0 ? fraction(compAccrued, borrowAmount) : Double({mantissa: 0});
             borrowState.index = safe224(add_(Double({mantissa: borrowState.index}), ratio).mantissa, "new index exceeds 224 bits");
-            borrowState.block = blockNumber;
-        } else if (deltaBlocks > 0) {
-            borrowState.block = blockNumber;
+            borrowState.timestamp = timestamp;
+        } else if (deltaTimestamp > 0) {
+            borrowState.timestamp = timestamp;
         }
     }
 
@@ -1305,14 +1305,14 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      */
     function updateContributorRewards(address contributor) public {
         uint compSpeed = compContributorSpeeds[contributor];
-        uint blockNumber = getBlockNumber();
-        uint deltaBlocks = sub_(blockNumber, lastContributorBlock[contributor]);
-        if (deltaBlocks > 0 && compSpeed > 0) {
-            uint newAccrued = mul_(deltaBlocks, compSpeed);
+        uint currentTimestamp = getTimestamp();
+        uint deltaTimestamp = sub_(currentTimestamp, lastContributorTimestamp[contributor]);
+        if (deltaTimestamp > 0 && compSpeed > 0) {
+            uint newAccrued = mul_(deltaTimestamp, compSpeed);
             uint contributorAccrued = add_(compAccrued[contributor], newAccrued);
 
             compAccrued[contributor] = contributorAccrued;
-            lastContributorBlock[contributor] = blockNumber;
+            lastContributorTimestamp[contributor] = currentTimestamp;
         }
     }
 
@@ -1426,9 +1426,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         updateContributorRewards(contributor);
         if (compSpeed == 0) {
             // release storage
-            delete lastContributorBlock[contributor];
+            delete lastContributorTimestamp[contributor];
         } else {
-            lastContributorBlock[contributor] = getBlockNumber();
+            lastContributorTimestamp[contributor] = getTimestamp();
         }
         compContributorSpeeds[contributor] = compSpeed;
 
@@ -1459,6 +1459,10 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
 
     function getBlockNumber() virtual public view returns (uint) {
         return block.number;
+    }
+
+    function getTimestamp() public view returns (uint256) {
+        return block.timestamp;
     }
 
     /**

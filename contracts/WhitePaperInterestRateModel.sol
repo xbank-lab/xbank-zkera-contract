@@ -9,24 +9,24 @@ import "./InterestRateModel.sol";
   * @notice The parameterized model described in section 2.4 of the original Compound Protocol whitepaper
   */
 contract WhitePaperInterestRateModel is InterestRateModel {
-    event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock);
+    event NewInterestParams(uint baseRatePerSec, uint multiplierPerSec);
 
     uint256 private constant BASE = 1e18;
 
     /**
-     * @notice The approximate number of blocks per year that is assumed by the interest rate model
+     * @notice The approximate number of seconds per year that is assumed by the interest rate model
      */
-    uint public constant blocksPerYear = 2102400;
+    uint public constant secondsPerYear = 31536000;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
      */
-    uint public multiplierPerBlock;
+    uint public multiplierPerSec;
 
     /**
      * @notice The base interest rate which is the y-intercept when utilization rate is 0
      */
-    uint public baseRatePerBlock;
+    uint public baseRatePerSec;
 
     /**
      * @notice Construct an interest rate model
@@ -34,10 +34,10 @@ contract WhitePaperInterestRateModel is InterestRateModel {
      * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by BASE)
      */
     constructor(uint baseRatePerYear, uint multiplierPerYear) public {
-        baseRatePerBlock = baseRatePerYear / blocksPerYear;
-        multiplierPerBlock = multiplierPerYear / blocksPerYear;
+        baseRatePerSec = baseRatePerYear / secondsPerYear;
+        multiplierPerSec = multiplierPerYear / secondsPerYear;
 
-        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock);
+        emit NewInterestParams(baseRatePerSec, multiplierPerSec);
     }
 
     /**
@@ -65,7 +65,7 @@ contract WhitePaperInterestRateModel is InterestRateModel {
      */
     function getBorrowRate(uint cash, uint borrows, uint reserves) override public view returns (uint) {
         uint ur = utilizationRate(cash, borrows, reserves);
-        return (ur * multiplierPerBlock / BASE) + baseRatePerBlock;
+        return (ur * multiplierPerSec / BASE) + baseRatePerSec;
     }
 
     /**
