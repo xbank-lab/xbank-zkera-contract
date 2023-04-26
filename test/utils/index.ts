@@ -4,13 +4,20 @@ import { utils } from "zksync-web3/build/src";
 import { CErc20, CErc20__factory, CEther, CToken } from "../../typechain";
 import { CTokenLike } from "../../utils/interfaces";
 import { ERC20Like } from "./../../utils/interfaces";
+import { type } from "os";
 
 export async function getERC20Balance(
   erc20: ERC20Like | CTokenLike,
   wallet: Wallet
 ): Promise<BigNumber> {
-  // erc20 = ERC20__factory.connect(erc20.address, wallet);
   return await erc20.balanceOf(wallet.address);
+}
+
+export async function getERC20AddressBalance(
+  erc20: ERC20Like | CTokenLike,
+  address: string
+): Promise<BigNumber> {
+  return await erc20.balanceOf(address);
 }
 
 export async function transferERC20(

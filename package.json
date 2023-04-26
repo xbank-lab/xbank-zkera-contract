@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "compile": "hardhat compile --network zkSyncTestnet",
     "test": "NODE_ENV=local hardhat test --no-compile",
     "test:compile": "NODE_ENV=local hardhat test",
     "test:testnet": "NODE_ENV=testnet hardhat test --network zkSyncTestnet",

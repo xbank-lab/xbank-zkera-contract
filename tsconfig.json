@@ -9,8 +9,10 @@
     "resolveJsonModule": true,
     "types": ["@types/node", "@types/chai", "@types/mocha"],
   },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"],
   "files": [
-    // "types/chai-bignumber.d.ts", "typechain/index.d.ts"
-    "typechain/index.ts"
+    "typechain/index.ts",
+    "./hardhat.config.ts"
   ]
 }

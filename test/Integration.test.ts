@@ -1,29 +1,37 @@
 import { parseEther } from "ethers/lib/utils";
-import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
+import { CToken } from "./../typechain/CToken";
+import { TokenErrorReporterInterface } from "./../typechain/ErrorReporter.sol/TokenErrorReporter";
+import { ComptrollerErrorReporter } from "./../typechain/ErrorReporter.sol/ComptrollerErrorReporter";
+import chai, { util } from "chai";
+import { solidity } from "ethereum-waffle";
+
 import { BigNumber, constants, utils } from "ethers";
+import "@openzeppelin/test-helpers";
 import * as hre from "hardhat";
 import { waffle } from "hardhat";
+import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { Provider, Wallet } from "zksync-web3";
 import {
-  _simulateMintCErc20,
   approveERC20,
   distributeERC20,
   distributeETH,
+  getERC20AddressBalance,
   getERC20Balance,
   getETHBalance,
 } from "./utils";
 
 import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
 
-import { expect } from "chai";
-
 import {
   BaseJumpRateModelV2,
   CEther__factory,
+  CTokenInterface__factory,
   Comptroller,
+  ComptrollerErrorReporter__factory,
   Comptroller__factory,
   ERC20PresetFixedSupply,
   SimplePriceOracle,
+  TokenErrorReporter__factory,
 } from "../typechain";
 import { INTEREST_RATE_MODEL } from "./config/deployment_config";
 import {
@@ -33,6 +41,9 @@ import {
   deployBaseJumpRateModelV2 as deployJumpRateModelV2,
   deploySimplePriceOracle,
 } from "./utils/deploy";
+
+chai.use(solidity);
+const { expect } = chai;
 
 const DEPLOYER_WALLET_PK =
   "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
@@ -53,7 +64,9 @@ describe("Protocol fundamentals", function () {
   let alice: Wallet;
   let bob: Wallet;
 
+  // Txs
   let tx;
+  let pendingTx;
 
   // ERC20s
   let USDT: ERC20PresetFixedSupply;
@@ -85,7 +98,7 @@ describe("Protocol fundamentals", function () {
     );
     USDC = await deployERC20(
       deployer,
-      "USD Coin ",
+      "USD Coin",
       "USDC",
       utils.parseEther("1000000")
     );
@@ -251,10 +264,16 @@ describe("Protocol fundamentals", function () {
 
   context("Mint Redeem", async () => {
     it("Should allow mint cERC20 and cETH", async function () {
-      // alice approve 100e18 USDC
+      // alice & bob approve 100e18 USDC
       await approveERC20(
         USDC,
         alice,
+        cTokens["USDC"].address,
+        utils.parseEther("100")
+      );
+      await approveERC20(
+        USDC,
+        bob,
         cTokens["USDC"].address,
         utils.parseEther("100")
       );
@@ -262,9 +281,17 @@ describe("Protocol fundamentals", function () {
       // alice deposit 100e18 USDC, receiving 5000000000000000e8 cUSDC
       tx = await cTokens["USDC"].connect(alice).mint(utils.parseEther("100"));
       await tx.wait();
-      // [check] alice balance should have 90e18 USDC, 500000000000000e8 cUSDC
+      // bob deposit 100e18 USDC, receiving 5000000000000000e8 cUSDC
+      tx = await cTokens["USDC"].connect(bob).mint(utils.parseEther("100"));
+      await tx.wait();
+
+      // [check] alice & bob balance should have 90e18 USDC, 500000000000000e8 cUSDC
       expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("900"));
       expect(await getERC20Balance(cTokens["USDC"], alice)).to.eq(
+        utils.parseUnits("5000000000000000", 8)
+      );
+      expect(await getERC20Balance(USDC, bob)).to.eq(utils.parseEther("900"));
+      expect(await getERC20Balance(cTokens["USDC"], bob)).to.eq(
         utils.parseUnits("5000000000000000", 8)
       );
 
@@ -325,12 +352,73 @@ describe("Protocol fundamentals", function () {
         .connect(alice)
         .redeem(utils.parseUnits("50", 8));
       await tx.wait();
-      // [check] alice balance should have 250e8 - 50e8 = 200e8 cETH, and almost +1e18 ETH more
+      // [check] alice balance should have 250e8 - 50e8 = 200e8 cETH, and almost +1e18 ETH more (deducted gas)
       expect(await getERC20Balance(cTokens["ETH"], alice)).to.eq(
         utils.parseUnits("200", 8)
       );
-      expect(await getETHBalance(alice)).to.be.greaterThan(
-        aliceETHBalanceBefore.add(utils.parseEther("0.99"))
+      expect(await getETHBalance(alice)).to.greaterThan(
+        aliceETHBalanceBefore.add(utils.parseEther("0.999"))
+      );
+    });
+
+    it("Should allow borrow cERC20 and cETH", async function () {
+      // Recap state:
+      // _____________________________
+      // │ Market │  Alice  │  Bob   │
+      // │  ETH   │   4e18  │   -    │
+      // │  USDC  │  20e18  │ 100e18 │
+      // │  USDT  │    -    │   -    │
+      // ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+      // bob has collateral of 100 USDC ($1) at collateral factor 80% => $80
+      // bob can borrow ETH up to $80 ($80/$1500 ETH = 0.0533 ETH)
+
+      // bob try to borrow without put USDC as collateral
+      pendingTx = cTokens["ETH"].connect(bob).borrow(utils.parseEther("0.05"));
+      await expect(pendingTx).to.be.reverted;
+
+      const comptrollerAsBob = Comptroller__factory.connect(
+        comptroller.address,
+        bob
+      );
+
+      // [check] bob has 0 collateral liquidity and 0 shortfall
+      const [_, prevLiquidity, prevShortfall] =
+        await comptrollerAsBob.getHypotheticalAccountLiquidity(
+          bob.address,
+          cTokens["ETH"].address,
+          utils.parseEther("0"),
+          utils.parseEther("0")
+        );
+      expect(prevLiquidity).to.eq(utils.parseEther("0"));
+      expect(prevShortfall).to.eq(utils.parseEther("0"));
+
+      // bob use USDC as collateral
+      tx = await comptrollerAsBob.enterMarkets([cTokens["USDC"].address]);
+      await tx.wait();
+
+      // [check] bob has $80 collateral liquidity and 0 shortfall
+      const [__, liquidity, shortfall] =
+        await comptrollerAsBob.getHypotheticalAccountLiquidity(
+          bob.address,
+          cTokens["ETH"].address,
+          utils.parseEther("0"),
+          utils.parseEther("0")
+        );
+      expect(liquidity).to.eq(utils.parseEther("80"));
+      expect(shortfall).to.eq(utils.parseEther("0"));
+
+      // bob try to borrow a little over allowed amount
+      pendingTx = cTokens["ETH"].connect(bob).borrow(utils.parseEther("0.054"));
+      await expect(pendingTx).to.be.reverted;
+
+      // bob try to borrow at almost allowed amount
+      const bobETHBalanceBefore = await getETHBalance(bob);
+      tx = await cTokens["ETH"].connect(bob).borrow(utils.parseEther("0.053"));
+      await tx.wait();
+
+      // [check] bob balance ETH should +0.052e18 ETH more (deducted gas)
+      expect(await getETHBalance(bob)).to.greaterThan(
+        bobETHBalanceBefore.add(utils.parseEther("0.052"))
       );
     });
   });
