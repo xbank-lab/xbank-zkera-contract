@@ -1,21 +1,16 @@
-import { parseEther } from "ethers/lib/utils";
-import { CToken } from "./../typechain/CToken";
-import { TokenErrorReporterInterface } from "./../typechain/ErrorReporter.sol/TokenErrorReporter";
-import { ComptrollerErrorReporter } from "./../typechain/ErrorReporter.sol/ComptrollerErrorReporter";
-import chai, { util } from "chai";
+import chai from "chai";
 import { solidity } from "ethereum-waffle";
 
-import { BigNumber, constants, utils } from "ethers";
+import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import "@openzeppelin/test-helpers";
+import { BigNumber, constants, utils } from "ethers";
 import * as hre from "hardhat";
 import { waffle } from "hardhat";
-import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { Provider, Wallet } from "zksync-web3";
 import {
   approveERC20,
   distributeERC20,
   distributeETH,
-  getERC20AddressBalance,
   getERC20Balance,
   getETHBalance,
 } from "./utils";
@@ -25,13 +20,10 @@ import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
 import {
   BaseJumpRateModelV2,
   CEther__factory,
-  CTokenInterface__factory,
   Comptroller,
-  ComptrollerErrorReporter__factory,
   Comptroller__factory,
   ERC20PresetFixedSupply,
   SimplePriceOracle,
-  TokenErrorReporter__factory,
 } from "../typechain";
 import { INTEREST_RATE_MODEL } from "./config/deployment_config";
 import {
@@ -205,6 +197,10 @@ describe("Protocol fundamentals", function () {
 
   context("Initial config", async () => {
     it("Should have config ready", async function () {
+      const comptrollerAsBob = Comptroller__factory.connect(
+        comptroller.address,
+        bob
+      );
       // [check] Comptroller
       const comptrollerAsDeployer = Comptroller__factory.connect(
         comptroller.address,
@@ -264,6 +260,10 @@ describe("Protocol fundamentals", function () {
 
   context("Mint Redeem", async () => {
     it("Should allow mint cERC20 and cETH", async function () {
+      const comptrollerAsBob = Comptroller__factory.connect(
+        comptroller.address,
+        bob
+      );
       // alice & bob approve 100e18 USDC
       await approveERC20(
         USDC,
@@ -309,6 +309,10 @@ describe("Protocol fundamentals", function () {
     });
 
     it("Should allow redeem cERC20 and cETH", async function () {
+      const comptrollerAsBob = Comptroller__factory.connect(
+        comptroller.address,
+        bob
+      );
       // alice approve all cUSDC to redeem
       await approveERC20(
         cTokens["USDC"],
@@ -361,8 +365,8 @@ describe("Protocol fundamentals", function () {
       );
     });
 
-    it("Should allow borrow cERC20 and cETH", async function () {
-      // Recap state:
+    it("Should allow borrow cross markets", async function () {
+      // Recap market state:
       // _____________________________
       // │ Market │  Alice  │  Bob   │
       // │  ETH   │   4e18  │   -    │
@@ -420,6 +424,34 @@ describe("Protocol fundamentals", function () {
       expect(await getETHBalance(bob)).to.greaterThan(
         bobETHBalanceBefore.add(utils.parseEther("0.052"))
       );
+
+      // [check] bob balance ETH should +0.052e18 ETH more (deducted gas)
+      expect(await getETHBalance(bob)).to.greaterThan(
+        bobETHBalanceBefore.add(utils.parseEther("0.052"))
+      );
+
+      // [check] bob cannot borrow additional certain amount of ETH due to borrow limit reached
+      pendingTx = cTokens["ETH"].connect(bob).borrow(utils.parseEther("0.1"));
+      await expect(pendingTx).to.be.reverted;
+    });
+
+    it("Should allow repay with interest", async function () {
+      // Recap market state:
+      // ________________________________
+      // │ Market │  Alice  │    Bob    │
+      // │  ETH   │   4e18  │ -0.052e18 │
+      // │  USDC  │  20e18  │   100e18  │
+      // │  USDT  │    -    │     -     │
+      // ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+      // bob has collateral of 100 USDC ($1) at collateral factor 80% => $80
+      // bob borrowed 0.052e18 ETH ($78) which almost reach bob's borrow limit
+
+      const comptrollerAsBob = Comptroller__factory.connect(
+        comptroller.address,
+        bob
+      );
+
+      // wip: cannot mine zksync block
     });
   });
 });
