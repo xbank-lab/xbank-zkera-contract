@@ -97,7 +97,7 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
         // The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
-        // The timestamp the index was last updated at (updated from block)
+        // The timestamp the index was last updated at
         // @dev Modified from block
         uint32 timestamp;
     }

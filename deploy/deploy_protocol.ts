@@ -53,6 +53,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`# PriceOracle deployed at: ${simplePriceOracle.address}`);
 
   // deploy comptroller
+  // IMPORTANT: check hard-coded COMP address
   comptroller = await deployComptroller(deployer);
   const comptrollerAsDeployer = Comptroller__factory.connect(
     comptroller.address,
