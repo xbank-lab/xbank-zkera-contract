@@ -41,8 +41,7 @@ contract Maximillion {
         if (received > borrows) {
             cEther_.repayBorrowBehalf{value: borrows}(borrower);
             (bool success, ) = payable(msg.sender).call{value: received - borrows}("");
-            if (!success)
-                revert();
+            require(success, "Bad ETH transfer");
         } else {
             cEther_.repayBorrowBehalf{value: received}(borrower);
         }

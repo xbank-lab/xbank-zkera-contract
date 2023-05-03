@@ -193,14 +193,6 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
     }
 
     /**
-     * @dev Function to simply retrieve block number
-     *  This exists mainly for inheriting test contracts to stub this result.
-     */
-    function getBlockNumber() virtual internal view returns (uint) {
-        return block.number;
-    }
-
-    /**
      * @dev Function to simply retrieve L2 batch timestamp 
      *  This exists mainly for inheriting test contracts to stub this result.
      */
