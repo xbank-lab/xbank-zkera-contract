@@ -7,13 +7,13 @@ import "./PriceOracle.sol";
 import "./ComptrollerInterface.sol";
 import "./ComptrollerStorage.sol";
 import "./Unitroller.sol";
-import "./Governance/Comp.sol";
+import "./Governance/Tokens/XB.sol";
 
 /**
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
+contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -73,6 +73,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
 
     /// @notice Emitted when COMP receivable for a user has been updated.
     event CompReceivableUpdated(address indexed user, uint oldCompReceivable, uint newCompReceivable);
+
+    /// @notice Emitted when token distribution address has been updated.
+    event DistributionTokenUpdated(address oldDistAddress, address newDistAddress);
 
     /// @notice The initial COMP index for a market
     uint224 public constant compInitialIndex = 1e36;
@@ -1325,7 +1328,7 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @return The amount of COMP which was NOT transferred to the user
      */
     function grantCompInternal(address user, uint amount) internal returns (uint) {
-        Comp comp = Comp(getCompAddress());
+        XB comp = XB(getDistributionToken());
         uint compRemaining = comp.balanceOf(address(this));
         if (amount > 0 && amount <= compRemaining) {
             comp.transfer(user, amount);
@@ -1413,11 +1416,22 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         return block.timestamp;
     }
 
+    function _setDistributionToken(address newDistributionToken) public returns (uint) {
+        // Check caller is admin and XBAddress ≠ address(0)
+        require(msg.sender == admin, "only admin can set distributionToken");
+        require(distributionToken != newDistributionToken && newDistributionToken != address(0), "invalid distributionToken address");
+
+        address oldDistAddress = distributionToken;
+        distributionToken = newDistributionToken;
+        emit DistributionTokenUpdated(oldDistAddress, distributionToken);
+        return uint(Error.NO_ERROR);
+    }
+
     /**
-     * @notice Return the address of the COMP token
-     * @return The address of COMP
+     * @notice Return the address of the distribution token
+     * @return The address of distribution token
      */
-    function getCompAddress() virtual public view returns (address) {
-        return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+    function getDistributionToken() virtual public view returns (address) {
+        return distributionToken;
     }
 }

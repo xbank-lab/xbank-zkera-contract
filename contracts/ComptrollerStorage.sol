@@ -159,3 +159,9 @@ contract ComptrollerV7Storage is ComptrollerV6Storage {
     /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
     mapping(address => uint) public compReceivable;
 }
+
+// xBank version: V8 onwards
+contract ComptrollerV8Storage is ComptrollerV7Storage {
+    /// @notice Governance distribution token
+    address public distributionToken;
+}

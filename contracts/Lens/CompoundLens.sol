@@ -48,8 +48,8 @@ contract CompoundLens {
     struct CTokenMetadata {
         address cToken;
         uint exchangeRateCurrent;
-        uint supplyRatePerSec;
-        uint borrowRatePerSec;
+        uint supplyRatePerBlock;
+        uint borrowRatePerBlock;
         uint reserveFactorMantissa;
         uint totalBorrows;
         uint totalReserves;
@@ -142,8 +142,8 @@ contract CompoundLens {
         return CTokenMetadata({
             cToken: address(cToken),
             exchangeRateCurrent: exchangeRateCurrent,
-            supplyRatePerSec: cToken.supplyRatePerSec(),
-            borrowRatePerSec: cToken.borrowRatePerSec(),
+            supplyRatePerBlock: cToken.supplyRatePerBlock(),
+            borrowRatePerBlock: cToken.borrowRatePerBlock(),
             reserveFactorMantissa: cToken.reserveFactorMantissa(),
             totalBorrows: cToken.totalBorrows(),
             totalReserves: cToken.totalReserves(),
