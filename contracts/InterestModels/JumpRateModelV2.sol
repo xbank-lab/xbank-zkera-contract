@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./BaseJumpRateModelV2.sol";
-import "./InterestRateModel.sol";
+import { BaseJumpRateModelV2 } from "@xbank-zkera/InterestModels/Abstracts/BaseJumpRateModelV2.sol";
 
 /**
  * @title Compound's JumpRateModel Contract V2 for V2 cTokens
  * @author Arr00
  * @notice Supports only for V2 cTokens
  */
-contract JumpRateModelV2 is InterestRateModel, BaseJumpRateModelV2 {
+contract JumpRateModelV2 is BaseJumpRateModelV2 {
   /**
    * @notice Calculates the current borrow rate per sec
    * @param cash The amount of cash in the market
@@ -32,7 +31,6 @@ contract JumpRateModelV2 is InterestRateModel, BaseJumpRateModelV2 {
     uint kink_,
     address owner_
   )
-    public
     BaseJumpRateModelV2(
       baseRatePerYear,
       multiplierPerYear,

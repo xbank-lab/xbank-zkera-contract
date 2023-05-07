@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
-
-interface CompLike {
-  function delegate(address delegatee) external;
-}
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Abstracts/ComptrollerAbstract.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
+import { XErc20Abstract } from "@xbank-zkera/X/Abstracts/XErc20Abstract.sol";
+import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
+import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
+import { Erc20NonStandardInterface } from "@xbank-zkera/Interfaces/Erc20NonStandardInterface.sol";
 
 /**
  * @title Compound's CErc20 Contract
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract CErc20 is CToken, CErc20Interface {
+contract XErc20 is XTokenBase, XErc20Abstract {
   /**
    * @notice Initialize the new money market
    * @param underlying_ The address of the underlying asset
@@ -25,8 +27,8 @@ contract CErc20 is CToken, CErc20Interface {
    */
   function initialize(
     address underlying_,
-    ComptrollerInterface comptroller_,
-    InterestRateModel interestRateModel_,
+    ComptrollerAbstract comptroller_,
+    InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
     string memory symbol_,
@@ -44,7 +46,7 @@ contract CErc20 is CToken, CErc20Interface {
 
     // Set underlying and sanity check it
     underlying = underlying_;
-    EIP20Interface(underlying).totalSupply();
+    Erc20Interface(underlying).totalSupply();
   }
 
   /*** User Interface ***/
@@ -123,15 +125,15 @@ contract CErc20 is CToken, CErc20Interface {
    *  The collateral seized is transferred to the liquidator.
    * @param borrower The borrower of this cToken to be liquidated
    * @param repayAmount The amount of the underlying borrowed asset to repay
-   * @param cTokenCollateral The market in which to seize collateral from the borrower
+   * @param xTokenCollateral The market in which to seize collateral from the borrower
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function liquidateBorrow(
     address borrower,
     uint repayAmount,
-    CTokenInterface cTokenCollateral
+    XTokenAbstract xTokenCollateral
   ) external override returns (uint) {
-    liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral);
+    liquidateBorrowInternal(borrower, repayAmount, xTokenCollateral);
     return NO_ERROR;
   }
 
@@ -139,7 +141,7 @@ contract CErc20 is CToken, CErc20Interface {
    * @notice A public function to sweep accidental ERC-20 transfers to this contract. Tokens are sent to admin (timelock)
    * @param token The address of the ERC-20 token to sweep
    */
-  function sweepToken(EIP20NonStandardInterface token) external override {
+  function sweepToken(Erc20NonStandardInterface token) external override {
     require(
       msg.sender == admin,
       "CErc20::sweepToken: only admin can sweep tokens"
@@ -169,7 +171,7 @@ contract CErc20 is CToken, CErc20Interface {
    * @return The quantity of underlying tokens owned by this contract
    */
   function getCashPrior() internal view virtual override returns (uint) {
-    EIP20Interface token = EIP20Interface(underlying);
+    Erc20Interface token = Erc20Interface(underlying);
     return token.balanceOf(address(this));
   }
 
@@ -188,8 +190,8 @@ contract CErc20 is CToken, CErc20Interface {
   ) internal virtual override returns (uint) {
     // Read from storage once
     address underlying_ = underlying;
-    EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying_);
-    uint balanceBefore = EIP20Interface(underlying_).balanceOf(address(this));
+    Erc20NonStandardInterface token = Erc20NonStandardInterface(underlying_);
+    uint balanceBefore = Erc20Interface(underlying_).balanceOf(address(this));
     token.transferFrom(from, address(this), amount);
 
     bool success;
@@ -212,7 +214,7 @@ contract CErc20 is CToken, CErc20Interface {
     require(success, "TOKEN_TRANSFER_IN_FAILED");
 
     // Calculate the amount that was *actually* transferred
-    uint balanceAfter = EIP20Interface(underlying_).balanceOf(address(this));
+    uint balanceAfter = Erc20Interface(underlying_).balanceOf(address(this));
     return balanceAfter - balanceBefore; // underflow already checked above, just subtract
   }
 
@@ -229,7 +231,7 @@ contract CErc20 is CToken, CErc20Interface {
     address payable to,
     uint amount
   ) internal virtual override {
-    EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
+    Erc20NonStandardInterface token = Erc20NonStandardInterface(underlying);
     token.transfer(to, amount);
 
     bool success;
@@ -250,18 +252,5 @@ contract CErc20 is CToken, CErc20Interface {
       }
     }
     require(success, "TOKEN_TRANSFER_OUT_FAILED");
-  }
-
-  /**
-   * @notice Admin call to delegate the votes of the COMP-like underlying
-   * @param compLikeDelegatee The address to delegate votes to
-   * @dev CTokens whose underlying are not CompLike should revert here
-   */
-  function _delegateCompLikeTo(address compLikeDelegatee) external {
-    require(
-      msg.sender == admin,
-      "only the admin may set the comp-like delegate"
-    );
-    CompLike(underlying).delegate(compLikeDelegatee);
   }
 }

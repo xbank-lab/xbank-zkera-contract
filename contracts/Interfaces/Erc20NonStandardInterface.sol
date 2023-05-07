@@ -6,7 +6,7 @@ pragma solidity ^0.8.10;
  * @dev Version of ERC20 with no return values for `transfer` and `transferFrom`
  *  See https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
  */
-interface EIP20NonStandardInterface {
+interface Erc20NonStandardInterface {
   /**
    * @notice Get the total number of tokens in circulation
    * @return The supply of tokens

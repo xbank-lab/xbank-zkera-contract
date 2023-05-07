@@ -2,10 +2,10 @@
 pragma solidity ^0.8.10;
 
 /**
- * @title Compound's InterestRateModel Interface
+ * @title Compound's InterestRateModel Abstract
  * @author Compound
  */
-abstract contract InterestRateModel {
+abstract contract InterestRateModelAbstract {
   /// @notice Indicator that this is an InterestRateModel contract (for inspection)
   bool public constant isInterestRateModel = true;
 

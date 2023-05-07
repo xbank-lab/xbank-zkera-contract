@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./InterestRateModel.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
  * @title Compound's WhitePaperInterestRateModel Contract
  * @author Compound
  * @notice The parameterized model described in section 2.4 of the original Compound Protocol whitepaper
  */
-contract WhitePaperInterestRateModel is InterestRateModel {
+contract WhitePaperInterestRateModel is InterestRateModelAbstract {
   event NewInterestParams(uint baseRatePerSec, uint multiplierPerSec);
 
   uint256 private constant BASE = 1e18;
@@ -33,7 +33,7 @@ contract WhitePaperInterestRateModel is InterestRateModel {
    * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by BASE)
    * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by BASE)
    */
-  constructor(uint baseRatePerYear, uint multiplierPerYear) public {
+  constructor(uint baseRatePerYear, uint multiplierPerYear) {
     baseRatePerSec = baseRatePerYear / secondsPerYear;
     multiplierPerSec = multiplierPerYear / secondsPerYear;
 

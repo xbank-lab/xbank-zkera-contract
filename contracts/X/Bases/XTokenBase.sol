@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./ComptrollerInterface.sol";
-import "./CTokenInterfaces.sol";
-import "./ErrorReporter.sol";
-import "./EIP20Interface.sol";
-import "./InterestRateModel.sol";
-import "./ExponentialNoError.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Abstracts/ComptrollerAbstract.sol";
+import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
+import { XTokenError } from "@xbank-zkera/Errors/XTokenError.sol";
+import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
+import { ExponentialNoError } from "@xbank-zkera/Maths/ExponentialNoError.sol";
 
 /**
  * @title Compound's CToken Contract
  * @notice Abstract base for CTokens
  * @author Compound
  */
-abstract contract CToken is
-  CTokenInterface,
+abstract contract XTokenBase is
+  XTokenAbstract,
   ExponentialNoError,
-  TokenErrorReporter
+  XTokenError
 {
   /**
    * @notice Initialize the money market
@@ -28,8 +28,8 @@ abstract contract CToken is
    * @param decimals_ EIP-20 decimal precision of this token
    */
   function initialize(
-    ComptrollerInterface comptroller_,
-    InterestRateModel interestRateModel_,
+    ComptrollerAbstract comptroller_,
+    InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
     string memory symbol_,
@@ -203,7 +203,7 @@ abstract contract CToken is
    * @return The amount of underlying owned by `owner`
    */
   function balanceOfUnderlying(address owner) external override returns (uint) {
-    Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
+    Exp memory exchangeRate = Exp({ mantissa: exchangeRateCurrent() });
     return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
   }
 
@@ -416,7 +416,7 @@ abstract contract CToken is
      */
 
     Exp memory simpleInterestFactor = mul_(
-      Exp({mantissa: borrowRateMantissa}),
+      Exp({ mantissa: borrowRateMantissa }),
       timestampDelta
     );
     uint interestAccumulated = mul_ScalarTruncate(
@@ -425,7 +425,7 @@ abstract contract CToken is
     );
     uint totalBorrowsNew = interestAccumulated + borrowsPrior;
     uint totalReservesNew = mul_ScalarTruncateAddUInt(
-      Exp({mantissa: reserveFactorMantissa}),
+      Exp({ mantissa: reserveFactorMantissa }),
       interestAccumulated,
       reservesPrior
     );
@@ -485,7 +485,7 @@ abstract contract CToken is
       revert MintFreshnessCheck();
     }
 
-    Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
+    Exp memory exchangeRate = Exp({ mantissa: exchangeRateStoredInternal() });
 
     /////////////////////////
     // EFFECTS & INTERACTIONS
@@ -566,7 +566,7 @@ abstract contract CToken is
     );
 
     /* exchangeRate = invoke Exchange Rate Stored() */
-    Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
+    Exp memory exchangeRate = Exp({ mantissa: exchangeRateStoredInternal() });
 
     uint redeemTokens;
     uint redeemAmount;
@@ -811,24 +811,24 @@ abstract contract CToken is
    * @notice The sender liquidates the borrowers collateral.
    *  The collateral seized is transferred to the liquidator.
    * @param borrower The borrower of this cToken to be liquidated
-   * @param cTokenCollateral The market in which to seize collateral from the borrower
+   * @param xTokenCollateral The market in which to seize collateral from the borrower
    * @param repayAmount The amount of the underlying borrowed asset to repay
    */
   function liquidateBorrowInternal(
     address borrower,
     uint repayAmount,
-    CTokenInterface cTokenCollateral
+    XTokenAbstract xTokenCollateral
   ) internal nonReentrant {
     accrueInterest();
 
-    uint error = cTokenCollateral.accrueInterest();
+    uint error = xTokenCollateral.accrueInterest();
     if (error != NO_ERROR) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted liquidation failed
       revert LiquidateAccrueCollateralInterestFailed(error);
     }
 
     // liquidateBorrowFresh emits borrow-specific logs on errors, so we don't need to
-    liquidateBorrowFresh(msg.sender, borrower, repayAmount, cTokenCollateral);
+    liquidateBorrowFresh(msg.sender, borrower, repayAmount, xTokenCollateral);
   }
 
   /**
@@ -836,19 +836,19 @@ abstract contract CToken is
    *  The collateral seized is transferred to the liquidator.
    * @param borrower The borrower of this cToken to be liquidated
    * @param liquidator The address repaying the borrow and seizing collateral
-   * @param cTokenCollateral The market in which to seize collateral from the borrower
+   * @param xTokenCollateral The market in which to seize collateral from the borrower
    * @param repayAmount The amount of the underlying borrowed asset to repay
    */
   function liquidateBorrowFresh(
     address liquidator,
     address borrower,
     uint repayAmount,
-    CTokenInterface cTokenCollateral
+    XTokenAbstract xTokenCollateral
   ) internal {
     /* Fail if liquidate not allowed */
     uint allowed = comptroller.liquidateBorrowAllowed(
       address(this),
-      address(cTokenCollateral),
+      address(xTokenCollateral),
       liquidator,
       borrower,
       repayAmount
@@ -862,8 +862,8 @@ abstract contract CToken is
       revert LiquidateFreshnessCheck();
     }
 
-    /* Verify cTokenCollateral market's timestamp equals current timestamp */
-    if (cTokenCollateral.accrualTimestamp() != getTimestamp()) {
+    /* Verify xTokenCollateral market's timestamp equals current timestamp */
+    if (xTokenCollateral.accrualTimestamp() != getTimestamp()) {
       revert LiquidateCollateralFreshnessCheck();
     }
 
@@ -897,7 +897,7 @@ abstract contract CToken is
     (uint amountSeizeError, uint seizeTokens) = comptroller
       .liquidateCalculateSeizeTokens(
         address(this),
-        address(cTokenCollateral),
+        address(xTokenCollateral),
         actualRepayAmount
       );
     require(
@@ -907,16 +907,16 @@ abstract contract CToken is
 
     /* Revert if borrower collateral token balance < seizeTokens */
     require(
-      cTokenCollateral.balanceOf(borrower) >= seizeTokens,
+      xTokenCollateral.balanceOf(borrower) >= seizeTokens,
       "LIQUIDATE_SEIZE_TOO_MUCH"
     );
 
     // If this is also the collateral, run seizeInternal to avoid re-entrancy, otherwise make an external call
-    if (address(cTokenCollateral) == address(this)) {
+    if (address(xTokenCollateral) == address(this)) {
       seizeInternal(address(this), liquidator, borrower, seizeTokens);
     } else {
       require(
-        cTokenCollateral.seize(liquidator, borrower, seizeTokens) == NO_ERROR,
+        xTokenCollateral.seize(liquidator, borrower, seizeTokens) == NO_ERROR,
         "token seizure failed"
       );
     }
@@ -926,7 +926,7 @@ abstract contract CToken is
       liquidator,
       borrower,
       actualRepayAmount,
-      address(cTokenCollateral),
+      address(xTokenCollateral),
       seizeTokens
     );
   }
@@ -989,10 +989,10 @@ abstract contract CToken is
      */
     uint protocolSeizeTokens = mul_(
       seizeTokens,
-      Exp({mantissa: protocolSeizeShareMantissa})
+      Exp({ mantissa: protocolSeizeShareMantissa })
     );
     uint liquidatorSeizeTokens = seizeTokens - protocolSeizeTokens;
-    Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
+    Exp memory exchangeRate = Exp({ mantissa: exchangeRateStoredInternal() });
     uint protocolSeizeAmount = mul_ScalarTruncate(
       exchangeRate,
       protocolSeizeTokens
@@ -1078,14 +1078,14 @@ abstract contract CToken is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setComptroller(
-    ComptrollerInterface newComptroller
+    ComptrollerAbstract newComptroller
   ) public override returns (uint) {
     // Check caller is admin
     if (msg.sender != admin) {
       revert SetComptrollerOwnerCheck();
     }
 
-    ComptrollerInterface oldComptroller = comptroller;
+    ComptrollerAbstract oldComptroller = comptroller;
     // Ensure invoke comptroller.isComptroller() returns true
     require(newComptroller.isComptroller(), "marker method returned false");
 
@@ -1266,7 +1266,7 @@ abstract contract CToken is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setInterestRateModel(
-    InterestRateModel newInterestRateModel
+    InterestRateModelAbstract newInterestRateModel
   ) public override returns (uint) {
     accrueInterest();
     // _setInterestRateModelFresh emits interest-rate-model-update-specific logs on errors, so we don't need to.
@@ -1280,10 +1280,10 @@ abstract contract CToken is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setInterestRateModelFresh(
-    InterestRateModel newInterestRateModel
+    InterestRateModelAbstract newInterestRateModel
   ) internal returns (uint) {
     // Used to store old model for use in the event that is emitted on success
-    InterestRateModel oldInterestRateModel;
+    InterestRateModelAbstract oldInterestRateModel;
 
     // Check caller is admin
     if (msg.sender != admin) {

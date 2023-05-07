@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./InterestRateModel.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
  * @title Logic for Compound's JumpRateModel Contract V2.
  * @author Compound (modified by Dharma Labs, refactored by Arr00)
  * @notice Version 2 modifies Version 1 by enabling updateable parameters.
  */
-abstract contract BaseJumpRateModelV2 is InterestRateModel {
+abstract contract BaseJumpRateModelV2 is InterestRateModelAbstract {
   event NewInterestParams(
     uint baseRatePerSec,
     uint multiplierPerSec,
@@ -62,7 +62,7 @@ abstract contract BaseJumpRateModelV2 is InterestRateModel {
     uint jumpMultiplierPerYear,
     uint kink_,
     address owner_
-  ) internal {
+  ) {
     owner = owner_;
 
     updateJumpRateModelInternal(

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CErc20Delegate.sol";
+import "@xbank-zkera/CErc20Delegate.sol";
 
 /**
  * @title Compound's CDai Contract
  * @notice CToken which wraps Multi-Collateral DAI
  * @author Compound
  */
-contract CDaiDelegate is CErc20Delegate {
+contract XDaiDelegate is CErc20Delegate {
   /**
    * @notice DAI adapter address
    */

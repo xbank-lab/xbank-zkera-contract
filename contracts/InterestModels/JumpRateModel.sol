@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./InterestRateModel.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
  * @title Compound's JumpRateModel Contract
  * @author Compound
  */
-contract JumpRateModel is InterestRateModel {
+contract JumpRateModel is InterestRateModelAbstract {
   event NewInterestParams(
     uint baseRatePerSec,
     uint multiplierPerSec,
@@ -54,7 +54,7 @@ contract JumpRateModel is InterestRateModel {
     uint multiplierPerYear,
     uint jumpMultiplierPerYear,
     uint kink_
-  ) public {
+  ) {
     baseRatePerSec = baseRatePerYear / secondsPerYear;
     multiplierPerSec = multiplierPerYear / secondsPerYear;
     jumpMultiplierPerSec = jumpMultiplierPerYear / secondsPerYear;
