@@ -5,163 +5,157 @@ import "./CToken.sol";
 import "./PriceOracle.sol";
 
 contract UnitrollerAdminStorage {
-    /**
-    * @notice Administrator for this contract
-    */
-    address public admin;
+  /**
+   * @notice Administrator for this contract
+   */
+  address public admin;
 
-    /**
-    * @notice Pending administrator for this contract
-    */
-    address public pendingAdmin;
+  /**
+   * @notice Pending administrator for this contract
+   */
+  address public pendingAdmin;
 
-    /**
-    * @notice Active brains of Unitroller
-    */
-    address public comptrollerImplementation;
+  /**
+   * @notice Active brains of Unitroller
+   */
+  address public comptrollerImplementation;
 
-    /**
-    * @notice Pending brains of Unitroller
-    */
-    address public pendingComptrollerImplementation;
+  /**
+   * @notice Pending brains of Unitroller
+   */
+  address public pendingComptrollerImplementation;
 }
 
 contract ComptrollerV1Storage is UnitrollerAdminStorage {
+  /**
+   * @notice Oracle which gives the price of any given asset
+   */
+  PriceOracle public oracle;
 
-    /**
-     * @notice Oracle which gives the price of any given asset
-     */
-    PriceOracle public oracle;
+  /**
+   * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
+   */
+  uint public closeFactorMantissa;
 
-    /**
-     * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
-     */
-    uint public closeFactorMantissa;
+  /**
+   * @notice Multiplier representing the discount on collateral that a liquidator receives
+   */
+  uint public liquidationIncentiveMantissa;
 
-    /**
-     * @notice Multiplier representing the discount on collateral that a liquidator receives
-     */
-    uint public liquidationIncentiveMantissa;
+  /**
+   * @notice Max number of assets a single account can participate in (borrow or use as collateral)
+   */
+  uint public maxAssets;
 
-    /**
-     * @notice Max number of assets a single account can participate in (borrow or use as collateral)
-     */
-    uint public maxAssets;
-
-    /**
-     * @notice Per-account mapping of "assets you are in", capped by maxAssets
-     */
-    mapping(address => CToken[]) public accountAssets;
-
+  /**
+   * @notice Per-account mapping of "assets you are in", capped by maxAssets
+   */
+  mapping(address => CToken[]) public accountAssets;
 }
 
 contract ComptrollerV2Storage is ComptrollerV1Storage {
-    struct Market {
-        // Whether or not this market is listed
-        bool isListed;
+  struct Market {
+    // Whether or not this market is listed
+    bool isListed;
+    //  Multiplier representing the most one can borrow against their collateral in this market.
+    //  For instance, 0.9 to allow borrowing 90% of collateral value.
+    //  Must be between 0 and 1, and stored as a mantissa.
+    uint collateralFactorMantissa;
+    // Per-market mapping of "accounts in this asset"
+    mapping(address => bool) accountMembership;
+    // Whether or not this market receives COMP
+    bool isComped;
+  }
 
-        //  Multiplier representing the most one can borrow against their collateral in this market.
-        //  For instance, 0.9 to allow borrowing 90% of collateral value.
-        //  Must be between 0 and 1, and stored as a mantissa.
-        uint collateralFactorMantissa;
+  /**
+   * @notice Official mapping of cTokens -> Market metadata
+   * @dev Used e.g. to determine if a market is supported
+   */
+  mapping(address => Market) public markets;
 
-        // Per-market mapping of "accounts in this asset"
-        mapping(address => bool) accountMembership;
-
-        // Whether or not this market receives COMP
-        bool isComped;
-    }
-
-    /**
-     * @notice Official mapping of cTokens -> Market metadata
-     * @dev Used e.g. to determine if a market is supported
-     */
-    mapping(address => Market) public markets;
-
-
-    /**
-     * @notice The Pause Guardian can pause certain actions as a safety mechanism.
-     *  Actions which allow users to remove their own assets cannot be paused.
-     *  Liquidation / seizing / transfer can only be paused globally, not by market.
-     */
-    address public pauseGuardian;
-    bool public _mintGuardianPaused;
-    bool public _borrowGuardianPaused;
-    bool public transferGuardianPaused;
-    bool public seizeGuardianPaused;
-    mapping(address => bool) public mintGuardianPaused;
-    mapping(address => bool) public borrowGuardianPaused;
+  /**
+   * @notice The Pause Guardian can pause certain actions as a safety mechanism.
+   *  Actions which allow users to remove their own assets cannot be paused.
+   *  Liquidation / seizing / transfer can only be paused globally, not by market.
+   */
+  address public pauseGuardian;
+  bool public _mintGuardianPaused;
+  bool public _borrowGuardianPaused;
+  bool public transferGuardianPaused;
+  bool public seizeGuardianPaused;
+  mapping(address => bool) public mintGuardianPaused;
+  mapping(address => bool) public borrowGuardianPaused;
 }
 
 contract ComptrollerV3Storage is ComptrollerV2Storage {
-    struct CompMarketState {
-        // The market's last updated compBorrowIndex or compSupplyIndex
-        uint224 index;
-        // The timestamp the index was last updated at
-        // @dev Modified from block
-        uint32 timestamp;
-    }
+  struct CompMarketState {
+    // The market's last updated compBorrowIndex or compSupplyIndex
+    uint224 index;
+    // The timestamp the index was last updated at
+    // @dev Modified from block
+    uint32 timestamp;
+  }
 
-    /// @notice A list of all markets
-    CToken[] public allMarkets;
+  /// @notice A list of all markets
+  CToken[] public allMarkets;
 
-    /// @notice The rate at which the flywheel distributes COMP, per block
-    uint public compRate;
+  /// @notice The rate at which the flywheel distributes COMP, per block
+  uint public compRate;
 
-    /// @notice The portion of compRate that each market currently receives
-    mapping(address => uint) public compSpeeds;
+  /// @notice The portion of compRate that each market currently receives
+  mapping(address => uint) public compSpeeds;
 
-    /// @notice The COMP market supply state for each market
-    mapping(address => CompMarketState) public compSupplyState;
+  /// @notice The COMP market supply state for each market
+  mapping(address => CompMarketState) public compSupplyState;
 
-    /// @notice The COMP market borrow state for each market
-    mapping(address => CompMarketState) public compBorrowState;
+  /// @notice The COMP market borrow state for each market
+  mapping(address => CompMarketState) public compBorrowState;
 
-    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compSupplierIndex;
+  /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
+  mapping(address => mapping(address => uint)) public compSupplierIndex;
 
-    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compBorrowerIndex;
+  /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
+  mapping(address => mapping(address => uint)) public compBorrowerIndex;
 
-    /// @notice The COMP accrued but not yet transferred to each user
-    mapping(address => uint) public compAccrued;
+  /// @notice The COMP accrued but not yet transferred to each user
+  mapping(address => uint) public compAccrued;
 }
 
 contract ComptrollerV4Storage is ComptrollerV3Storage {
-    // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
-    address public borrowCapGuardian;
+  // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
+  address public borrowCapGuardian;
 
-    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
-    mapping(address => uint) public borrowCaps;
+  // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
+  mapping(address => uint) public borrowCaps;
 }
 
 contract ComptrollerV5Storage is ComptrollerV4Storage {
-    /// @notice The portion of COMP that each contributor receives per block
-    mapping(address => uint) public compContributorSpeeds;
+  /// @notice The portion of COMP that each contributor receives per block
+  mapping(address => uint) public compContributorSpeeds;
 
-    /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
-    /// @dev modified from lastContributorBlock
-    mapping(address => uint) public lastContributorTimestamp;
+  /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
+  /// @dev modified from lastContributorBlock
+  mapping(address => uint) public lastContributorTimestamp;
 }
 
 contract ComptrollerV6Storage is ComptrollerV5Storage {
-    /// @notice The rate at which comp is distributed to the corresponding borrow market (per block)
-    mapping(address => uint) public compBorrowSpeeds;
+  /// @notice The rate at which comp is distributed to the corresponding borrow market (per block)
+  mapping(address => uint) public compBorrowSpeeds;
 
-    /// @notice The rate at which comp is distributed to the corresponding supply market (per block)
-    mapping(address => uint) public compSupplySpeeds;
+  /// @notice The rate at which comp is distributed to the corresponding supply market (per block)
+  mapping(address => uint) public compSupplySpeeds;
 }
 
 contract ComptrollerV7Storage is ComptrollerV6Storage {
-    /// @notice Flag indicating whether the function to fix COMP accruals has been executed (RE: proposal 62 bug)
-    bool public proposal65FixExecuted;
+  /// @notice Flag indicating whether the function to fix COMP accruals has been executed (RE: proposal 62 bug)
+  bool public proposal65FixExecuted;
 
-    /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
-    mapping(address => uint) public compReceivable;
+  /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
+  mapping(address => uint) public compReceivable;
 }
 
 // xBank version: V8 onwards
 contract ComptrollerV8Storage is ComptrollerV7Storage {
-    /// @notice Governance distribution token
-    address public distributionToken;
+  /// @notice Governance distribution token
+  address public distributionToken;
 }

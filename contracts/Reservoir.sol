@@ -8,7 +8,6 @@ pragma solidity ^0.8.10;
  * @author Compound
  */
 contract Reservoir {
-
   /// @notice The block number when the Reservoir started (immutable)
   uint public dripStart;
 
@@ -25,11 +24,11 @@ contract Reservoir {
   uint public dripped;
 
   /**
-    * @notice Constructs a Reservoir
-    * @param dripRate_ Numer of tokens per block to drip
-    * @param token_ The token to drip
-    * @param target_ The recipient of dripped tokens
-    */
+   * @notice Constructs a Reservoir
+   * @param dripRate_ Numer of tokens per block to drip
+   * @param token_ The token to drip
+   * @param target_ The recipient of dripped tokens
+   */
   constructor(uint dripRate_, EIP20Interface token_, address target_) public {
     dripStart = block.number;
     dripRate = dripRate_;
@@ -39,10 +38,10 @@ contract Reservoir {
   }
 
   /**
-    * @notice Drips the maximum amount of tokens to match the drip rate since inception
-    * @dev Note: this will only drip up to the amount of tokens available.
-    * @return The amount of tokens dripped in this call
-    */
+   * @notice Drips the maximum amount of tokens to match the drip rate since inception
+   * @dev Note: this will only drip up to the amount of tokens available.
+   * @return The amount of tokens dripped in this call
+   */
   function drip() public returns (uint) {
     // First, read storage into memory
     EIP20Interface token_ = token;
@@ -54,7 +53,11 @@ contract Reservoir {
     uint blockNumber_ = block.number;
 
     // Next, calculate intermediate values
-    uint dripTotal_ = mul(dripRate_, blockNumber_ - dripStart_, "dripTotal overflow");
+    uint dripTotal_ = mul(
+      dripRate_,
+      blockNumber_ - dripStart_,
+      "dripTotal overflow"
+    );
     uint deltaDrip_ = sub(dripTotal_, dripped_, "deltaDrip underflow");
     uint toDrip_ = min(reservoirBalance_, deltaDrip_);
     uint drippedNext_ = add(dripped_, toDrip_, "tautological");
@@ -68,25 +71,41 @@ contract Reservoir {
 
   /* Internal helper functions for safe math */
 
-  function add(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+  function add(
+    uint a,
+    uint b,
+    string memory errorMessage
+  ) internal pure returns (uint) {
     uint c;
-    unchecked { c = a + b; }
+    unchecked {
+      c = a + b;
+    }
     require(c >= a, errorMessage);
     return c;
   }
 
-  function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+  function sub(
+    uint a,
+    uint b,
+    string memory errorMessage
+  ) internal pure returns (uint) {
     require(b <= a, errorMessage);
     uint c = a - b;
     return c;
   }
 
-  function mul(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+  function mul(
+    uint a,
+    uint b,
+    string memory errorMessage
+  ) internal pure returns (uint) {
     if (a == 0) {
       return 0;
     }
     uint c;
-    unchecked { c = a * b; }
+    unchecked {
+      c = a * b;
+    }
     require(c / a == b, errorMessage);
     return c;
   }
