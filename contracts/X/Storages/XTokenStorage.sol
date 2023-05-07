@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import { ComptrollerAbstract } from "@xbank-zkera/Abstracts/ComptrollerAbstract.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 contract XTokenStorage {

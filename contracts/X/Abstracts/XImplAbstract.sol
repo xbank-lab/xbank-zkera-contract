@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import { XDelegationStorage } from "@xbank-zkera/X/Storages/XDelegationStorage.sol";
 
-abstract contract XDelegateAbstract is XDelegationStorage {
+abstract contract XImplAbstract is XDelegationStorage {
   /**
    * @notice Called by the delegator on a delegate to initialize it for duty
    * @dev Should revert if any issues arise which make it unfit for delegation

@@ -1,24 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
-import "./ErrorReporter.sol";
-import "./PriceOracle.sol";
-import "./ComptrollerInterface.sol";
-import "./ComptrollerStorage.sol";
-import "./Unitroller.sol";
-import "./Governance/Tokens/XB.sol";
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
+import { XesError } from "@xbank-zkera/Errors/XesError.sol";
+import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
+import { XesStorage } from "@xbank-zkera/Xes/Storages/XesStorage.sol";
+import { XesProxy } from "@xbank-zkera/Xes/XesProxy.sol";
+import { XB } from "@xbank-zkera/Governance/Tokens/XB.sol";
+import { ExponentialNoError } from "@xbank-zkera/Maths/ExponentialNoError.sol";
 
 /**
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract Comptroller is
-  ComptrollerV8Storage,
-  ComptrollerInterface,
-  ComptrollerErrorReporter,
-  ExponentialNoError
-{
+contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
   /// @notice Emitted when an admin supports a market
   event MarketListed(CToken cToken);
 
@@ -475,7 +471,7 @@ contract Comptroller is
     }
 
     // Keep the flywheel moving
-    Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
+    Exp memory borrowIndex = Exp({ mantissa: CToken(cToken).borrowIndex() });
     updateCompBorrowIndex(cToken, borrowIndex);
     distributeBorrowerComp(cToken, borrower, borrowIndex);
 
@@ -528,7 +524,7 @@ contract Comptroller is
     }
 
     // Keep the flywheel moving
-    Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
+    Exp memory borrowIndex = Exp({ mantissa: CToken(cToken).borrowIndex() });
     updateCompBorrowIndex(cToken, borrowIndex);
     distributeBorrowerComp(cToken, borrower, borrowIndex);
 
@@ -607,7 +603,7 @@ contract Comptroller is
 
       /* The liquidator may not repay more than what is allowed by the closeFactor */
       uint maxClose = mul_ScalarTruncate(
-        Exp({mantissa: closeFactorMantissa}),
+        Exp({ mantissa: closeFactorMantissa }),
         borrowBalance
       );
       if (repayAmount > maxClose) {
@@ -904,14 +900,14 @@ contract Comptroller is
       vars.collateralFactor = Exp({
         mantissa: markets[address(asset)].collateralFactorMantissa
       });
-      vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
+      vars.exchangeRate = Exp({ mantissa: vars.exchangeRateMantissa });
 
       // Get the normalized price of the asset
       vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
       if (vars.oraclePriceMantissa == 0) {
         return (Error.PRICE_ERROR, 0, 0);
       }
-      vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
+      vars.oraclePrice = Exp({ mantissa: vars.oraclePriceMantissa });
 
       // Pre-compute a conversion factor from tokens -> ether (normalized price value)
       vars.tokensToDenom = mul_(
@@ -1006,12 +1002,12 @@ contract Comptroller is
     Exp memory ratio;
 
     numerator = mul_(
-      Exp({mantissa: liquidationIncentiveMantissa}),
-      Exp({mantissa: priceBorrowedMantissa})
+      Exp({ mantissa: liquidationIncentiveMantissa }),
+      Exp({ mantissa: priceBorrowedMantissa })
     );
     denominator = mul_(
-      Exp({mantissa: priceCollateralMantissa}),
-      Exp({mantissa: exchangeRateMantissa})
+      Exp({ mantissa: priceCollateralMantissa }),
+      Exp({ mantissa: exchangeRateMantissa })
     );
     ratio = div_(numerator, denominator);
 
@@ -1096,7 +1092,7 @@ contract Comptroller is
     });
 
     // Check collateral factor <= 0.9
-    Exp memory highLimit = Exp({mantissa: collateralFactorMaxMantissa});
+    Exp memory highLimit = Exp({ mantissa: collateralFactorMaxMantissa });
     if (lessThanExp(highLimit, newCollateralFactorExp)) {
       return
         fail(
@@ -1398,7 +1394,7 @@ contract Comptroller is
       // Borrow speed updated so let's update borrow state to ensure that
       //  1. COMP accrued properly for the old speed, and
       //  2. COMP accrued at the new speed starts after this timestamp.
-      Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+      Exp memory borrowIndex = Exp({ mantissa: cToken.borrowIndex() });
       updateCompBorrowIndex(address(cToken), borrowIndex);
 
       // Update speed and emit event
@@ -1425,12 +1421,12 @@ contract Comptroller is
     );
     if (deltaTimestamp > 0 && supplySpeed > 0) {
       uint supplyTokens = CToken(cToken).totalSupply();
-      uint compAccrued = mul_(deltaTimestamp, supplySpeed);
+      uint compAccrued_ = mul_(deltaTimestamp, supplySpeed);
       Double memory ratio = supplyTokens > 0
-        ? fraction(compAccrued, supplyTokens)
-        : Double({mantissa: 0});
+        ? fraction(compAccrued_, supplyTokens)
+        : Double({ mantissa: 0 });
       supplyState.index = safe224(
-        add_(Double({mantissa: supplyState.index}), ratio).mantissa,
+        add_(Double({ mantissa: supplyState.index }), ratio).mantissa,
         "new index exceeds 224 bits"
       );
       supplyState.timestamp = currentTimestamp;
@@ -1457,12 +1453,12 @@ contract Comptroller is
         CToken(cToken).totalBorrows(),
         marketBorrowIndex
       );
-      uint compAccrued = mul_(deltaTimestamp, borrowSpeed);
+      uint compAccrued_ = mul_(deltaTimestamp, borrowSpeed);
       Double memory ratio = borrowAmount > 0
-        ? fraction(compAccrued, borrowAmount)
-        : Double({mantissa: 0});
+        ? fraction(compAccrued_, borrowAmount)
+        : Double({ mantissa: 0 });
       borrowState.index = safe224(
-        add_(Double({mantissa: borrowState.index}), ratio).mantissa,
+        add_(Double({ mantissa: borrowState.index }), ratio).mantissa,
         "new index exceeds 224 bits"
       );
       borrowState.timestamp = timestamp;
@@ -1625,7 +1621,7 @@ contract Comptroller is
       CToken cToken = cTokens[i];
       require(markets[address(cToken)].isListed, "market must be listed");
       if (borrowers == true) {
-        Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+        Exp memory borrowIndex = Exp({ mantissa: cToken.borrowIndex() });
         updateCompBorrowIndex(address(cToken), borrowIndex);
         for (uint j = 0; j < holders.length; j++) {
           distributeBorrowerComp(address(cToken), holders[j], borrowIndex);

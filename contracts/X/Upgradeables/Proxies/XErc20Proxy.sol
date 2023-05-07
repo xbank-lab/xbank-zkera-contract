@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CTokenInterfaces.sol";
+import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
+import { XErc20Abstract } from "@xbank-zkera/X/Abstracts/XErc20Abstract.sol";
+import { XProxyAbstract } from "@xbank-zkera/X/Abstracts/XProxyAbstract.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
+import { Erc20NonStandardInterface } from "@xbank-zkera/Interfaces/Erc20NonStandardInterface.sol";
+import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
 
 /**
  * @title Compound's CErc20Delegator Contract
  * @notice CTokens which wrap an EIP-20 underlying and delegate to an implementation
  * @author Compound
  */
-contract CErc20Delegator is
-  CTokenInterface,
-  CErc20Interface,
-  CDelegatorInterface
-{
+contract XErc20Delegator is XTokenAbstract, XErc20Abstract, XProxyAbstract {
   /**
    * @notice Construct a new money market
    * @param underlying_ The address of the underlying asset
@@ -28,8 +30,8 @@ contract CErc20Delegator is
    */
   constructor(
     address underlying_,
-    ComptrollerInterface comptroller_,
-    InterestRateModel interestRateModel_,
+    ComptrollerAbstract comptroller_,
+    InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
     string memory symbol_,
@@ -187,21 +189,21 @@ contract CErc20Delegator is
    * @notice The sender liquidates the borrowers collateral.
    *  The collateral seized is transferred to the liquidator.
    * @param borrower The borrower of this cToken to be liquidated
-   * @param cTokenCollateral The market in which to seize collateral from the borrower
+   * @param xTokenCollateral The market in which to seize collateral from the borrower
    * @param repayAmount The amount of the underlying borrowed asset to repay
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function liquidateBorrow(
     address borrower,
     uint repayAmount,
-    CTokenInterface cTokenCollateral
+    XTokenAbstract xTokenCollateral
   ) external override returns (uint) {
     bytes memory data = delegateToImplementation(
       abi.encodeWithSignature(
         "liquidateBorrow(address,uint256,address)",
         borrower,
         repayAmount,
-        cTokenCollateral
+        xTokenCollateral
       )
     );
     return abi.decode(data, (uint));
@@ -453,7 +455,7 @@ contract CErc20Delegator is
    * @notice A public function to sweep accidental ERC-20 transfers to this contract. Tokens are sent to admin (timelock)
    * @param token The address of the ERC-20 token to sweep
    */
-  function sweepToken(EIP20NonStandardInterface token) external override {
+  function sweepToken(Erc20NonStandardInterface token) external override {
     delegateToImplementation(
       abi.encodeWithSignature("sweepToken(address)", token)
     );
@@ -482,7 +484,7 @@ contract CErc20Delegator is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setComptroller(
-    ComptrollerInterface newComptroller
+    ComptrollerAbstract newComptroller
   ) public override returns (uint) {
     bytes memory data = delegateToImplementation(
       abi.encodeWithSignature("_setComptroller(address)", newComptroller)
@@ -550,7 +552,7 @@ contract CErc20Delegator is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setInterestRateModel(
-    InterestRateModel newInterestRateModel
+    InterestRateModelAbstract newInterestRateModel
   ) public override returns (uint) {
     bytes memory data = delegateToImplementation(
       abi.encodeWithSignature(
@@ -639,5 +641,9 @@ contract CErc20Delegator is
         return(free_mem_ptr, returndatasize())
       }
     }
+  }
+
+  receive() external payable virtual {
+    revert("!supported");
   }
 }

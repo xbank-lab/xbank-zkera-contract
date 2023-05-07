@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
-import { ComptrollerAbstract } from "@xbank-zkera/Abstracts/ComptrollerAbstract.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 import { XErc20Abstract } from "@xbank-zkera/X/Abstracts/XErc20Abstract.sol";
 import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
@@ -14,7 +14,7 @@ import { Erc20NonStandardInterface } from "@xbank-zkera/Interfaces/Erc20NonStand
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract XErc20 is XTokenBase, XErc20Abstract {
+contract XErc20Base is XTokenBase, XErc20Abstract {
   /**
    * @notice Initialize the new money market
    * @param underlying_ The address of the underlying asset

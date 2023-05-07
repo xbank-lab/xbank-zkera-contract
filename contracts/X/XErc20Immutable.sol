@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CErc20.sol";
+import { XErc20Base } from "@xbank-zkera/X/Bases/XErc20Base.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
  * @title Compound's CErc20Immutable Contract
  * @notice CTokens which wrap an EIP-20 underlying and are immutable
  * @author Compound
  */
-contract CErc20Immutable is CErc20 {
+contract XErc20Immutable is XErc20Base {
   /**
    * @notice Construct a new money market
    * @param underlying_ The address of the underlying asset
@@ -22,8 +24,8 @@ contract CErc20Immutable is CErc20 {
    */
   constructor(
     address underlying_,
-    ComptrollerInterface comptroller_,
-    InterestRateModel interestRateModel_,
+    ComptrollerAbstract comptroller_,
+    InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
     string memory symbol_,

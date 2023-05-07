@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./ErrorReporter.sol";
-import "./ComptrollerStorage.sol";
+import { ComptrollerError } from "@xbank-zkera/Errors/ComptrollerError.sol";
+import { XesProxyStorage } from "@xbank-zkera/Xes/Storages/XesProxyStorage.sol";
 
 /**
  * @title ComptrollerCore
  * @dev Storage for the comptroller is at this address, while execution is delegated to the `comptrollerImplementation`.
  * CTokens should reference this contract as their comptroller.
  */
-contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
+contract XesProxy is XesProxyStorage, ComptrollerError {
   /**
    * @notice Emitted when pendingComptrollerImplementation is changed
    */
@@ -33,7 +33,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
    */
   event NewAdmin(address oldAdmin, address newAdmin);
 
-  constructor() public {
+  constructor() {
     // Set admin to caller
     admin = msg.sender;
   }
@@ -171,5 +171,9 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
         return(free_mem_ptr, returndatasize())
       }
     }
+  }
+
+  receive() external payable {
+    revert("!supported");
   }
 }

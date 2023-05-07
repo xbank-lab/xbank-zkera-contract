@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import { XDelegationStorage } from "@xbank-zkera/X/Storages/XDelegationStorage.sol";
 
-abstract contract XDelegatorAbstract is XDelegationStorage {
+abstract contract XProxyAbstract is XDelegationStorage {
   /**
    * @notice Emitted when implementation is changed
    */

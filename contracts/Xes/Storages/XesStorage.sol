@@ -1,36 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
-import "./PriceOracle.sol";
+import { XesProxyStorage } from "@xbank-zkera/Xes/Storages/XesProxyStorage.sol";
+import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
 
-contract UnitrollerAdminStorage {
-  /**
-   * @notice Administrator for this contract
-   */
-  address public admin;
-
-  /**
-   * @notice Pending administrator for this contract
-   */
-  address public pendingAdmin;
-
-  /**
-   * @notice Active brains of Unitroller
-   */
-  address public comptrollerImplementation;
-
-  /**
-   * @notice Pending brains of Unitroller
-   */
-  address public pendingComptrollerImplementation;
-}
-
-contract ComptrollerV1Storage is UnitrollerAdminStorage {
+contract XesV1Storage is XesProxyStorage {
   /**
    * @notice Oracle which gives the price of any given asset
    */
-  PriceOracle public oracle;
+  PriceOracleAbstract public oracle;
 
   /**
    * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
@@ -51,9 +29,8 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
    * @notice Per-account mapping of "assets you are in", capped by maxAssets
    */
   mapping(address => CToken[]) public accountAssets;
-}
 
-contract ComptrollerV2Storage is ComptrollerV1Storage {
+  // From ComptrollerV2Storage
   struct Market {
     // Whether or not this market is listed
     bool isListed;
@@ -85,9 +62,8 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
   bool public seizeGuardianPaused;
   mapping(address => bool) public mintGuardianPaused;
   mapping(address => bool) public borrowGuardianPaused;
-}
 
-contract ComptrollerV3Storage is ComptrollerV2Storage {
+  // From ComptrollerV3Storage
   struct CompMarketState {
     // The market's last updated compBorrowIndex or compSupplyIndex
     uint224 index;
@@ -119,43 +95,37 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
 
   /// @notice The COMP accrued but not yet transferred to each user
   mapping(address => uint) public compAccrued;
-}
 
-contract ComptrollerV4Storage is ComptrollerV3Storage {
+  // From ComptrollerV4Storage
   // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
   address public borrowCapGuardian;
 
   // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
   mapping(address => uint) public borrowCaps;
-}
 
-contract ComptrollerV5Storage is ComptrollerV4Storage {
+  // From ComptrollerV5Storage
   /// @notice The portion of COMP that each contributor receives per block
   mapping(address => uint) public compContributorSpeeds;
 
   /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
   /// @dev modified from lastContributorBlock
   mapping(address => uint) public lastContributorTimestamp;
-}
 
-contract ComptrollerV6Storage is ComptrollerV5Storage {
+  // From ComptrollerV6Storage
   /// @notice The rate at which comp is distributed to the corresponding borrow market (per block)
   mapping(address => uint) public compBorrowSpeeds;
 
   /// @notice The rate at which comp is distributed to the corresponding supply market (per block)
   mapping(address => uint) public compSupplySpeeds;
-}
 
-contract ComptrollerV7Storage is ComptrollerV6Storage {
+  // From ComptrollerV7Storage
   /// @notice Flag indicating whether the function to fix COMP accruals has been executed (RE: proposal 62 bug)
   bool public proposal65FixExecuted;
 
   /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
   mapping(address => uint) public compReceivable;
-}
 
-// xBank version: V8 onwards
-contract ComptrollerV8Storage is ComptrollerV7Storage {
+  // From ComptrollerV8Storage
   /// @notice Governance distribution token
   address public distributionToken;
 }

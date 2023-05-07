@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "@xbank-zkera/CErc20Delegate.sol";
+import { XErc20Impl } from "@xbank-zkera/X/Upgradeables/Implementations/XErc20Impl.sol";
+import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
 
 /**
  * @title Compound's CDai Contract
  * @notice CToken which wraps Multi-Collateral DAI
  * @author Compound
  */
-contract XDaiDelegate is CErc20Delegate {
+contract XDaiDelegate is XErc20Impl {
   /**
    * @notice DAI adapter address
    */
@@ -145,7 +146,7 @@ contract XDaiDelegate is CErc20Delegate {
     // Read from storage once
     address underlying_ = underlying;
     // Perform the EIP-20 transfer in
-    EIP20Interface token = EIP20Interface(underlying_);
+    Erc20Interface token = Erc20Interface(underlying_);
     require(
       token.transferFrom(from, address(this), amount),
       "unexpected EIP-20 transfer in return"

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
+import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
  * @title Compound's CEther Contract
  * @notice CToken which wraps Ether
  * @author Compound
  */
-contract CEther is CToken {
+contract XEtherImmutable is XTokenBase {
   /**
    * @notice Construct a new CEther money market
    * @param comptroller_ The address of the Comptroller
@@ -20,8 +22,8 @@ contract CEther is CToken {
    * @param admin_ Address of the administrator of this token
    */
   constructor(
-    ComptrollerInterface comptroller_,
-    InterestRateModel interestRateModel_,
+    ComptrollerAbstract comptroller_,
+    InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
     string memory symbol_,
@@ -108,13 +110,13 @@ contract CEther is CToken {
    *  The collateral seized is transferred to the liquidator.
    * @dev Reverts upon any failure
    * @param borrower The borrower of this cToken to be liquidated
-   * @param cTokenCollateral The market in which to seize collateral from the borrower
+   * @param xTokenCollateral The market in which to seize collateral from the borrower
    */
   function liquidateBorrow(
     address borrower,
-    CToken cTokenCollateral
+    XTokenBase xTokenCollateral
   ) external payable {
-    liquidateBorrowInternal(borrower, msg.value, cTokenCollateral);
+    liquidateBorrowInternal(borrower, msg.value, xTokenCollateral);
   }
 
   /**
@@ -164,7 +166,7 @@ contract CEther is CToken {
     uint amount
   ) internal virtual override {
     /* Send the Ether, with minimal gas and revert on failure */
-    (bool success, ) = payable(to).call{value: amount}("");
+    (bool success, ) = payable(to).call{ value: amount }("");
     require(success, "Bad ETH transfer");
   }
 }
