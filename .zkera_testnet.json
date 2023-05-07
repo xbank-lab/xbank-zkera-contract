@@ -1,0 +1,32 @@
+{
+  "Comptroller": "",
+  "PriceOracle": "",
+  "markets": [
+    {
+      "id": 0,
+      "symbol": "cETH",
+      "address": "0x"
+    },
+    {
+      "id": 0,
+      "symbol": "cUSDC",
+      "address": "0x"
+    },
+    {
+      "id": 0,
+      "symbol": "cDAI",
+      "address": "0x"
+    },
+    {
+      "id": 0,
+      "symbol": "cBTC",
+      "address": "0x"
+    }
+  ],
+  "tokens": {
+    "ETH": "0x0000000000000000000000000000000000000000",
+    "USDC": "0x0faF6df7054946141266420b43783387A78d82A9",
+    "DAI": "0x3e7676937A7E96CFB7616f255b9AD9FF47363D4b",
+    "wBTC": "0x0BfcE1D53451B4a8175DD94e6e029F7d8a701e9c"
+  }
+}

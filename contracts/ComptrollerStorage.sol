@@ -97,9 +97,9 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
         // The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
-
-        // The block number the index was last updated at
-        uint32 block;
+        // The timestamp the index was last updated at
+        // @dev Modified from block
+        uint32 timestamp;
     }
 
     /// @notice A list of all markets
@@ -139,8 +139,9 @@ contract ComptrollerV5Storage is ComptrollerV4Storage {
     /// @notice The portion of COMP that each contributor receives per block
     mapping(address => uint) public compContributorSpeeds;
 
-    /// @notice Last block at which a contributor's COMP rewards have been allocated
-    mapping(address => uint) public lastContributorBlock;
+    /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
+    /// @dev modified from lastContributorBlock
+    mapping(address => uint) public lastContributorTimestamp;
 }
 
 contract ComptrollerV6Storage is ComptrollerV5Storage {
@@ -157,4 +158,10 @@ contract ComptrollerV7Storage is ComptrollerV6Storage {
 
     /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
     mapping(address => uint) public compReceivable;
+}
+
+// xBank version: V8 onwards
+contract ComptrollerV8Storage is ComptrollerV7Storage {
+    /// @notice Governance distribution token
+    address public distributionToken;
 }
