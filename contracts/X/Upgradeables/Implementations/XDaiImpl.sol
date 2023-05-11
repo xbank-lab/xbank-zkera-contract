@@ -9,7 +9,7 @@ import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
  * @notice CToken which wraps Multi-Collateral DAI
  * @author Compound
  */
-contract XDaiDelegate is XErc20Impl {
+contract XDaiImpl is XErc20Impl {
   /**
    * @notice DAI adapter address
    */

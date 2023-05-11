@@ -14,7 +14,7 @@ import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
  * @notice CTokens which wrap an EIP-20 underlying and delegate to an implementation
  * @author Compound
  */
-contract XErc20Delegator is XTokenAbstract, XErc20Abstract, XProxyAbstract {
+contract XErc20Proxy is XTokenAbstract, XErc20Abstract, XProxyAbstract {
   /**
    * @notice Construct a new money market
    * @param underlying_ The address of the underlying asset
