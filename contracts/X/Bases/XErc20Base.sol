@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 import { XErc20Abstract } from "@xbank-zkera/X/Abstracts/XErc20Abstract.sol";
 import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
@@ -27,7 +27,7 @@ contract XErc20Base is XTokenBase, XErc20Abstract {
    */
   function initialize(
     address underlying_,
-    ComptrollerAbstract comptroller_,
+    XesAbstract comptroller_,
     InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,

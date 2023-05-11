@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./SafeMath.sol";
-
 contract Timelock {
-  using SafeMath for uint;
-
   event NewAdmin(address indexed newAdmin);
   event NewPendingAdmin(address indexed newPendingAdmin);
   event NewDelay(uint indexed newDelay);
@@ -44,7 +40,7 @@ contract Timelock {
 
   mapping(bytes32 => bool) public queuedTransactions;
 
-  constructor(address admin_, uint delay_) public {
+  constructor(address admin_, uint delay_) {
     require(
       delay_ >= MINIMUM_DELAY,
       "Timelock::constructor: Delay must exceed minimum delay."
@@ -111,7 +107,7 @@ contract Timelock {
       "Timelock::queueTransaction: Call must come from admin."
     );
     require(
-      eta >= getBlockTimestamp().add(delay),
+      eta >= getBlockTimestamp() + delay,
       "Timelock::queueTransaction: Estimated execution block must satisfy delay."
     );
 
@@ -162,7 +158,7 @@ contract Timelock {
       "Timelock::executeTransaction: Transaction hasn't surpassed time lock."
     );
     require(
-      getBlockTimestamp() <= eta.add(GRACE_PERIOD),
+      getBlockTimestamp() <= eta + GRACE_PERIOD,
       "Timelock::executeTransaction: Transaction is stale."
     );
 
@@ -177,7 +173,7 @@ contract Timelock {
     }
 
     // solium-disable-next-line security/no-call-value
-    (bool success, bytes memory returnData) = target.call{value: value}(
+    (bool success, bytes memory returnData) = target.call{ value: value }(
       callData
     );
     require(
@@ -193,5 +189,9 @@ contract Timelock {
   function getBlockTimestamp() internal view returns (uint) {
     // solium-disable-next-line security/no-block-members
     return block.timestamp;
+  }
+
+  receive() external payable {
+    revert("not supported");
   }
 }

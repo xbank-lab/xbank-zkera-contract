@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import { XErc20Base } from "@xbank-zkera/X/Bases/XErc20Base.sol";
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
@@ -24,7 +24,7 @@ contract XErc20Immutable is XErc20Base {
    */
   constructor(
     address underlying_,
-    ComptrollerAbstract comptroller_,
+    XesAbstract comptroller_,
     InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,

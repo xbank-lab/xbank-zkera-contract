@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./PriceOracle.sol";
-import "./CErc20.sol";
+import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
+import { XErc20Base } from "@xbank-zkera/X/Bases/XErc20Base.sol";
 
-contract SimplePriceOracle is PriceOracle {
+contract SimplePriceOracle is PriceOracleAbstract {
   mapping(address => uint) prices;
   event PricePosted(
     address asset,
@@ -13,27 +14,29 @@ contract SimplePriceOracle is PriceOracle {
     uint newPriceMantissa
   );
 
-  function _getUnderlyingAddress(CToken cToken) private view returns (address) {
+  function _getUnderlyingAddress(
+    XTokenBase xToken
+  ) private view returns (address) {
     address asset;
-    if (compareStrings(cToken.symbol(), "cETH")) {
+    if (compareStrings(xToken.symbol(), "cETH")) {
       asset = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     } else {
-      asset = address(CErc20(address(cToken)).underlying());
+      asset = address(XErc20Base(address(xToken)).underlying());
     }
     return asset;
   }
 
   function getUnderlyingPrice(
-    CToken cToken
+    XTokenBase xToken
   ) public view override returns (uint) {
-    return prices[_getUnderlyingAddress(cToken)];
+    return prices[_getUnderlyingAddress(xToken)];
   }
 
   function setUnderlyingPrice(
-    CToken cToken,
+    XTokenBase xToken,
     uint underlyingPriceMantissa
   ) public {
-    address asset = _getUnderlyingAddress(cToken);
+    address asset = _getUnderlyingAddress(xToken);
     emit PricePosted(
       asset,
       prices[asset],

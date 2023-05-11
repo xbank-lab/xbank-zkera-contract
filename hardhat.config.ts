@@ -1,6 +1,8 @@
+import fs from "fs";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-preprocessor";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@typechain/hardhat";
 
@@ -33,6 +35,14 @@ const zkSyncTestnet =
         verifyURL:
           "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
       };
+
+function getRemappings() {
+  return fs
+    .readFileSync("remappings.txt", "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.trim().split("="));
+}
 
 module.exports = {
   // defaultNetwork: "zkSyncTestnet",
@@ -69,6 +79,21 @@ module.exports = {
   },
   mocha: {
     timeout: 100000000,
+  },
+  // This fully resolves paths for imports in the ./lib directory for Hardhat
+  preprocess: {
+    eachLine: () => ({
+      transform: (line: string) => {
+        if (line.match(/^\s*import /i)) {
+          getRemappings().forEach(([find, replace]) => {
+            if (line.match(find)) {
+              line = line.replace(find, replace);
+            }
+          });
+        }
+        return line;
+      },
+    }),
   },
   etherscan: {
     apiKey: "", //<Your API key for Etherscan>,

@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
 import { XErc20Abstract } from "@xbank-zkera/X/Abstracts/XErc20Abstract.sol";
 import { XProxyAbstract } from "@xbank-zkera/X/Abstracts/XProxyAbstract.sol";
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 import { Erc20NonStandardInterface } from "@xbank-zkera/Interfaces/Erc20NonStandardInterface.sol";
 import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
@@ -30,7 +30,7 @@ contract XErc20Delegator is XTokenAbstract, XErc20Abstract, XProxyAbstract {
    */
   constructor(
     address underlying_,
-    ComptrollerAbstract comptroller_,
+    XesAbstract comptroller_,
     InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
@@ -484,7 +484,7 @@ contract XErc20Delegator is XTokenAbstract, XErc20Abstract, XProxyAbstract {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setComptroller(
-    ComptrollerAbstract newComptroller
+    XesAbstract newComptroller
   ) public override returns (uint) {
     bytes memory data = delegateToImplementation(
       abi.encodeWithSignature("_setComptroller(address)", newComptroller)

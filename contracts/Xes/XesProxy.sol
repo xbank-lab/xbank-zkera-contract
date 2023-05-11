@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import { ComptrollerError } from "@xbank-zkera/Errors/ComptrollerError.sol";
+import { XesError } from "@xbank-zkera/Errors/XesError.sol";
 import { XesProxyStorage } from "@xbank-zkera/Xes/Storages/XesProxyStorage.sol";
 
 /**
@@ -9,7 +9,7 @@ import { XesProxyStorage } from "@xbank-zkera/Xes/Storages/XesProxyStorage.sol";
  * @dev Storage for the comptroller is at this address, while execution is delegated to the `comptrollerImplementation`.
  * CTokens should reference this contract as their comptroller.
  */
-contract XesProxy is XesProxyStorage, ComptrollerError {
+contract XesProxy is XesProxyStorage, XesError {
   /**
    * @notice Emitted when pendingComptrollerImplementation is changed
    */

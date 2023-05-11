@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 contract XTokenStorage {
@@ -44,7 +44,7 @@ contract XTokenStorage {
   /**
    * @notice Contract which oversees inter-cToken operations
    */
-  ComptrollerAbstract public comptroller;
+  XesAbstract public comptroller;
 
   /**
    * @notice Model which tells what the current interest rate should be

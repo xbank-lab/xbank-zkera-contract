@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 import { XTokenStorage } from "@xbank-zkera/X/Storages/XTokenStorage.sol";
 
@@ -80,10 +80,7 @@ abstract contract XTokenAbstract is XTokenStorage {
   /**
    * @notice Event emitted when comptroller is changed
    */
-  event NewComptroller(
-    ComptrollerAbstract oldComptroller,
-    ComptrollerAbstract newComptroller
-  );
+  event NewComptroller(XesAbstract oldComptroller, XesAbstract newComptroller);
 
   /**
    * @notice Event emitted when interestRateModel is changed
@@ -193,9 +190,7 @@ abstract contract XTokenAbstract is XTokenStorage {
 
   function _acceptAdmin() external virtual returns (uint);
 
-  function _setComptroller(
-    ComptrollerAbstract newComptroller
-  ) external virtual returns (uint);
+  function _setComptroller(XesAbstract newXes) external virtual returns (uint);
 
   function _setReserveFactor(
     uint newReserveFactorMantissa

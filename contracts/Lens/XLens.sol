@@ -1,78 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "../CErc20.sol";
-import "../CToken.sol";
-import "../PriceOracle.sol";
-import "../EIP20Interface.sol";
-import "../Governance/GovernorAlpha.sol";
-import "../Governance/Comp.sol";
+import { XErc20Base } from "@xbank-zkera/X/Bases/XErc20Base.sol";
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
+import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
+import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
+import { GovernorAlpha } from "@xbank-zkera/Governance/GovernorAlpha.sol";
+import { Comp } from "@xbank-zkera/Governance/Comp.sol";
+import { XLensComptrollerInterface } from "@xbank-zkera/Lens/Interfaces/XLensComptrollerInterface.sol";
+import { GovernorBravoInterface } from "@xbank-zkera/Lens/Interfaces/GovernorBravoInterface.sol";
 
-interface ComptrollerLensInterface {
-  function markets(address) external view returns (bool, uint);
-
-  function oracle() external view returns (PriceOracle);
-
-  function getAccountLiquidity(
-    address
-  ) external view returns (uint, uint, uint);
-
-  function getAssetsIn(address) external view returns (CToken[] memory);
-
-  function claimComp(address) external;
-
-  function compAccrued(address) external view returns (uint);
-
-  function compSpeeds(address) external view returns (uint);
-
-  function compSupplySpeeds(address) external view returns (uint);
-
-  function compBorrowSpeeds(address) external view returns (uint);
-
-  function borrowCaps(address) external view returns (uint);
-}
-
-interface GovernorBravoInterface {
-  struct Receipt {
-    bool hasVoted;
-    uint8 support;
-    uint96 votes;
-  }
-  struct Proposal {
-    uint id;
-    address proposer;
-    uint eta;
-    uint startBlock;
-    uint endBlock;
-    uint forVotes;
-    uint againstVotes;
-    uint abstainVotes;
-    bool canceled;
-    bool executed;
-  }
-
-  function getActions(
-    uint proposalId
-  )
-    external
-    view
-    returns (
-      address[] memory targets,
-      uint[] memory values,
-      string[] memory signatures,
-      bytes[] memory calldatas
-    );
-
-  function proposals(uint proposalId) external view returns (Proposal memory);
-
-  function getReceipt(
-    uint proposalId,
-    address voter
-  ) external view returns (Receipt memory);
-}
-
-contract CompoundLens {
-  struct CTokenMetadata {
+contract XLens {
+  struct XTokenMetadata {
     address cToken;
     uint exchangeRateCurrent;
     uint supplyRatePerBlock;
@@ -93,8 +32,8 @@ contract CompoundLens {
   }
 
   function getCompSpeeds(
-    ComptrollerLensInterface comptroller,
-    CToken cToken
+    XLensComptrollerInterface comptroller,
+    XTokenBase xToken
   ) internal returns (uint, uint) {
     // Getting comp speeds is gnarly due to not every network having the
     // split comp speeds from Proposal 62 and other networks don't even
@@ -106,7 +45,7 @@ contract CompoundLens {
     ) = address(comptroller).call(
         abi.encodePacked(
           comptroller.compSupplySpeeds.selector,
-          abi.encode(address(cToken))
+          abi.encode(address(xToken))
         )
       );
     if (compSupplySpeedSuccess) {
@@ -120,7 +59,7 @@ contract CompoundLens {
     ) = address(comptroller).call(
         abi.encodePacked(
           comptroller.compBorrowSpeeds.selector,
-          abi.encode(address(cToken))
+          abi.encode(address(xToken))
         )
       );
     if (compBorrowSpeedSuccess) {
@@ -134,7 +73,7 @@ contract CompoundLens {
       ).call(
           abi.encodePacked(
             comptroller.compSpeeds.selector,
-            abi.encode(address(cToken))
+            abi.encode(address(xToken))
           )
         );
       if (compSpeedSuccess) {
@@ -147,31 +86,31 @@ contract CompoundLens {
     return (compSupplySpeed, compBorrowSpeed);
   }
 
-  function cTokenMetadata(
-    CToken cToken
-  ) public returns (CTokenMetadata memory) {
-    uint exchangeRateCurrent = cToken.exchangeRateCurrent();
-    ComptrollerLensInterface comptroller = ComptrollerLensInterface(
-      address(cToken.comptroller())
+  function xTokenMetadata(
+    XTokenBase xToken
+  ) public returns (XTokenMetadata memory) {
+    uint exchangeRateCurrent = xToken.exchangeRateCurrent();
+    XLensComptrollerInterface comptroller = XLensComptrollerInterface(
+      address(xToken.comptroller())
     );
     (bool isListed, uint collateralFactorMantissa) = comptroller.markets(
-      address(cToken)
+      address(xToken)
     );
     address underlyingAssetAddress;
     uint underlyingDecimals;
 
-    if (compareStrings(cToken.symbol(), "cETH")) {
+    if (compareStrings(xToken.symbol(), "cETH")) {
       underlyingAssetAddress = address(0);
       underlyingDecimals = 18;
     } else {
-      CErc20 cErc20 = CErc20(address(cToken));
-      underlyingAssetAddress = cErc20.underlying();
-      underlyingDecimals = EIP20Interface(cErc20.underlying()).decimals();
+      XErc20Base xErc20 = XErc20Base(address(xToken));
+      underlyingAssetAddress = xErc20.underlying();
+      underlyingDecimals = Erc20Interface(xErc20.underlying()).decimals();
     }
 
     (uint compSupplySpeed, uint compBorrowSpeed) = getCompSpeeds(
       comptroller,
-      cToken
+      xToken
     );
 
     uint borrowCap = 0;
@@ -180,7 +119,7 @@ contract CompoundLens {
     ).call(
         abi.encodePacked(
           comptroller.borrowCaps.selector,
-          abi.encode(address(cToken))
+          abi.encode(address(xToken))
         )
       );
     if (borrowCapSuccess) {
@@ -188,20 +127,20 @@ contract CompoundLens {
     }
 
     return
-      CTokenMetadata({
-        cToken: address(cToken),
+      XTokenMetadata({
+        cToken: address(xToken),
         exchangeRateCurrent: exchangeRateCurrent,
-        supplyRatePerBlock: cToken.supplyRatePerBlock(),
-        borrowRatePerBlock: cToken.borrowRatePerBlock(),
-        reserveFactorMantissa: cToken.reserveFactorMantissa(),
-        totalBorrows: cToken.totalBorrows(),
-        totalReserves: cToken.totalReserves(),
-        totalSupply: cToken.totalSupply(),
-        totalCash: cToken.getCash(),
+        supplyRatePerBlock: xToken.supplyRatePerBlock(),
+        borrowRatePerBlock: xToken.borrowRatePerBlock(),
+        reserveFactorMantissa: xToken.reserveFactorMantissa(),
+        totalBorrows: xToken.totalBorrows(),
+        totalReserves: xToken.totalReserves(),
+        totalSupply: xToken.totalSupply(),
+        totalCash: xToken.getCash(),
         isListed: isListed,
         collateralFactorMantissa: collateralFactorMantissa,
         underlyingAssetAddress: underlyingAssetAddress,
-        cTokenDecimals: cToken.decimals(),
+        cTokenDecimals: xToken.decimals(),
         underlyingDecimals: underlyingDecimals,
         compSupplySpeed: compSupplySpeed,
         compBorrowSpeed: compBorrowSpeed,
@@ -209,19 +148,19 @@ contract CompoundLens {
       });
   }
 
-  function cTokenMetadataAll(
-    CToken[] calldata cTokens
-  ) external returns (CTokenMetadata[] memory) {
-    uint cTokenCount = cTokens.length;
-    CTokenMetadata[] memory res = new CTokenMetadata[](cTokenCount);
-    for (uint i = 0; i < cTokenCount; i++) {
-      res[i] = cTokenMetadata(cTokens[i]);
+  function xTokenMetadataAll(
+    XTokenBase[] calldata xTokens
+  ) external returns (XTokenMetadata[] memory) {
+    uint xTokenCount = xTokens.length;
+    XTokenMetadata[] memory res = new XTokenMetadata[](xTokenCount);
+    for (uint i = 0; i < xTokenCount; i++) {
+      res[i] = xTokenMetadata(xTokens[i]);
     }
     return res;
   }
 
-  struct CTokenBalances {
-    address cToken;
+  struct XTokenBalances {
+    address xToken;
     uint balanceOf;
     uint borrowBalanceCurrent;
     uint balanceOfUnderlying;
@@ -229,29 +168,29 @@ contract CompoundLens {
     uint tokenAllowance;
   }
 
-  function cTokenBalances(
-    CToken cToken,
+  function xTokenBalances(
+    XTokenBase xToken,
     address payable account
-  ) public returns (CTokenBalances memory) {
-    uint balanceOf = cToken.balanceOf(account);
-    uint borrowBalanceCurrent = cToken.borrowBalanceCurrent(account);
-    uint balanceOfUnderlying = cToken.balanceOfUnderlying(account);
+  ) public returns (XTokenBalances memory) {
+    uint balanceOf = xToken.balanceOf(account);
+    uint borrowBalanceCurrent = xToken.borrowBalanceCurrent(account);
+    uint balanceOfUnderlying = xToken.balanceOfUnderlying(account);
     uint tokenBalance;
     uint tokenAllowance;
 
-    if (compareStrings(cToken.symbol(), "cETH")) {
+    if (compareStrings(xToken.symbol(), "cETH")) {
       tokenBalance = account.balance;
       tokenAllowance = account.balance;
     } else {
-      CErc20 cErc20 = CErc20(address(cToken));
-      EIP20Interface underlying = EIP20Interface(cErc20.underlying());
+      XErc20Base xErc20 = XErc20Base(address(xToken));
+      Erc20Interface underlying = Erc20Interface(xErc20.underlying());
       tokenBalance = underlying.balanceOf(account);
-      tokenAllowance = underlying.allowance(account, address(cToken));
+      tokenAllowance = underlying.allowance(account, address(xToken));
     }
 
     return
-      CTokenBalances({
-        cToken: address(cToken),
+      XTokenBalances({
+        xToken: address(xToken),
         balanceOf: balanceOf,
         borrowBalanceCurrent: borrowBalanceCurrent,
         balanceOfUnderlying: balanceOfUnderlying,
@@ -260,61 +199,61 @@ contract CompoundLens {
       });
   }
 
-  function cTokenBalancesAll(
-    CToken[] calldata cTokens,
+  function xTokenBalancesAll(
+    XTokenBase[] calldata xTokens,
     address payable account
-  ) external returns (CTokenBalances[] memory) {
-    uint cTokenCount = cTokens.length;
-    CTokenBalances[] memory res = new CTokenBalances[](cTokenCount);
-    for (uint i = 0; i < cTokenCount; i++) {
-      res[i] = cTokenBalances(cTokens[i], account);
+  ) external returns (XTokenBalances[] memory) {
+    uint xTokenCount = xTokens.length;
+    XTokenBalances[] memory res = new XTokenBalances[](xTokenCount);
+    for (uint i = 0; i < xTokenCount; i++) {
+      res[i] = xTokenBalances(xTokens[i], account);
     }
     return res;
   }
 
-  struct CTokenUnderlyingPrice {
+  struct XTokenUnderlyingPrice {
     address cToken;
     uint underlyingPrice;
   }
 
-  function cTokenUnderlyingPrice(
-    CToken cToken
-  ) public returns (CTokenUnderlyingPrice memory) {
-    ComptrollerLensInterface comptroller = ComptrollerLensInterface(
-      address(cToken.comptroller())
+  function xTokenUnderlyingPrice(
+    XTokenBase xToken
+  ) public view returns (XTokenUnderlyingPrice memory) {
+    XLensComptrollerInterface comptroller = XLensComptrollerInterface(
+      address(xToken.comptroller())
     );
-    PriceOracle priceOracle = comptroller.oracle();
+    PriceOracleAbstract priceOracle = comptroller.oracle();
 
     return
-      CTokenUnderlyingPrice({
-        cToken: address(cToken),
-        underlyingPrice: priceOracle.getUnderlyingPrice(cToken)
+      XTokenUnderlyingPrice({
+        cToken: address(xToken),
+        underlyingPrice: priceOracle.getUnderlyingPrice(xToken)
       });
   }
 
-  function cTokenUnderlyingPriceAll(
-    CToken[] calldata cTokens
-  ) external returns (CTokenUnderlyingPrice[] memory) {
-    uint cTokenCount = cTokens.length;
-    CTokenUnderlyingPrice[] memory res = new CTokenUnderlyingPrice[](
-      cTokenCount
+  function xTokenUnderlyingPriceAll(
+    XTokenBase[] calldata xTokens
+  ) external view returns (XTokenUnderlyingPrice[] memory) {
+    uint xTokenCount = xTokens.length;
+    XTokenUnderlyingPrice[] memory res = new XTokenUnderlyingPrice[](
+      xTokenCount
     );
-    for (uint i = 0; i < cTokenCount; i++) {
-      res[i] = cTokenUnderlyingPrice(cTokens[i]);
+    for (uint i = 0; i < xTokenCount; i++) {
+      res[i] = xTokenUnderlyingPrice(xTokens[i]);
     }
     return res;
   }
 
   struct AccountLimits {
-    CToken[] markets;
+    XTokenBase[] markets;
     uint liquidity;
     uint shortfall;
   }
 
   function getAccountLimits(
-    ComptrollerLensInterface comptroller,
+    XLensComptrollerInterface comptroller,
     address account
-  ) public returns (AccountLimits memory) {
+  ) public view returns (AccountLimits memory) {
     (uint errorCode, uint liquidity, uint shortfall) = comptroller
       .getAccountLiquidity(account);
     require(errorCode == 0);
@@ -556,7 +495,7 @@ contract CompoundLens {
 
   function getCompBalanceMetadataExt(
     Comp comp,
-    ComptrollerLensInterface comptroller,
+    XLensComptrollerInterface comptroller,
     address account
   ) external returns (CompBalanceMetadataExt memory) {
     uint balance = comp.balanceOf(account);

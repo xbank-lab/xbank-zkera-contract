@@ -16,13 +16,13 @@ import { ExponentialNoError } from "@xbank-zkera/Maths/ExponentialNoError.sol";
  */
 contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
   /// @notice Emitted when an admin supports a market
-  event MarketListed(CToken cToken);
+  event MarketListed(XTokenBase cToken);
 
   /// @notice Emitted when an account enters a market
-  event MarketEntered(CToken cToken, address account);
+  event MarketEntered(XTokenBase cToken, address account);
 
   /// @notice Emitted when an account exits a market
-  event MarketExited(CToken cToken, address account);
+  event MarketExited(XTokenBase cToken, address account);
 
   /// @notice Emitted when close factor is changed by admin
   event NewCloseFactor(
@@ -32,7 +32,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
   /// @notice Emitted when a collateral factor is changed by admin
   event NewCollateralFactor(
-    CToken cToken,
+    XTokenBase cToken,
     uint oldCollateralFactorMantissa,
     uint newCollateralFactorMantissa
   );
@@ -44,7 +44,10 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
   );
 
   /// @notice Emitted when price oracle is changed
-  event NewPriceOracle(PriceOracle oldPriceOracle, PriceOracle newPriceOracle);
+  event NewPriceOracle(
+    PriceOracleAbstract oldPriceOracle,
+    PriceOracleAbstract newPriceOracle
+  );
 
   /// @notice Emitted when pause guardian is changed
   event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
@@ -53,20 +56,20 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
   event ActionPaused(string action, bool pauseState);
 
   /// @notice Emitted when an action is paused on a market
-  event ActionPaused(CToken cToken, string action, bool pauseState);
+  event ActionPaused(XTokenBase cToken, string action, bool pauseState);
 
   /// @notice Emitted when a new borrow-side COMP speed is calculated for a market
-  event CompBorrowSpeedUpdated(CToken indexed cToken, uint newSpeed);
+  event CompBorrowSpeedUpdated(XTokenBase indexed cToken, uint newSpeed);
 
   /// @notice Emitted when a new supply-side COMP speed is calculated for a market
-  event CompSupplySpeedUpdated(CToken indexed cToken, uint newSpeed);
+  event CompSupplySpeedUpdated(XTokenBase indexed cToken, uint newSpeed);
 
   /// @notice Emitted when a new COMP speed is set for a contributor
   event ContributorCompSpeedUpdated(address indexed contributor, uint newSpeed);
 
   /// @notice Emitted when COMP is distributed to a supplier
   event DistributedSupplierComp(
-    CToken indexed cToken,
+    XTokenBase indexed cToken,
     address indexed supplier,
     uint compDelta,
     uint compSupplyIndex
@@ -74,14 +77,14 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
   /// @notice Emitted when COMP is distributed to a borrower
   event DistributedBorrowerComp(
-    CToken indexed cToken,
+    XTokenBase indexed cToken,
     address indexed borrower,
     uint compDelta,
     uint compBorrowIndex
   );
 
   /// @notice Emitted when borrow cap for a cToken is changed
-  event NewBorrowCap(CToken indexed cToken, uint newBorrowCap);
+  event NewBorrowCap(XTokenBase indexed cToken, uint newBorrowCap);
 
   /// @notice Emitted when borrow cap guardian is changed
   event NewBorrowCapGuardian(
@@ -137,8 +140,8 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    */
   function getAssetsIn(
     address account
-  ) external view returns (CToken[] memory) {
-    CToken[] memory assetsIn = accountAssets[account];
+  ) external view returns (XTokenBase[] memory) {
+    XTokenBase[] memory assetsIn = accountAssets[account];
 
     return assetsIn;
   }
@@ -151,7 +154,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    */
   function checkMembership(
     address account,
-    CToken cToken
+    XTokenBase cToken
   ) external view returns (bool) {
     return markets[address(cToken)].accountMembership[account];
   }
@@ -168,7 +171,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
     uint[] memory results = new uint[](len);
     for (uint i = 0; i < len; i++) {
-      CToken cToken = CToken(cTokens[i]);
+      XTokenBase cToken = XTokenBase(cTokens[i]);
 
       results[i] = uint(addToMarketInternal(cToken, msg.sender));
     }
@@ -183,7 +186,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @return Success indicator for whether the market was entered
    */
   function addToMarketInternal(
-    CToken cToken,
+    XTokenBase cToken,
     address borrower
   ) internal returns (Error) {
     Market storage marketToJoin = markets[address(cToken)];
@@ -219,7 +222,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @return Whether or not the account successfully exited the market
    */
   function exitMarket(address cTokenAddress) external override returns (uint) {
-    CToken cToken = CToken(cTokenAddress);
+    XTokenBase cToken = XTokenBase(cTokenAddress);
     /* Get sender tokensHeld and amountOwed underlying from the cToken */
     (uint oErr, uint tokensHeld, uint amountOwed, ) = cToken.getAccountSnapshot(
       msg.sender
@@ -254,7 +257,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
     /* Delete cToken from the account’s list of assets */
     // load into memory for faster iteration
-    CToken[] memory userAssetList = accountAssets[msg.sender];
+    XTokenBase[] memory userAssetList = accountAssets[msg.sender];
     uint len = userAssetList.length;
     uint assetIndex = len;
     for (uint i = 0; i < len; i++) {
@@ -268,7 +271,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     assert(assetIndex < len);
 
     // copy last item in list to location of item to be removed, reduce length by 1
-    CToken[] storage storedList = accountAssets[msg.sender];
+    XTokenBase[] storage storedList = accountAssets[msg.sender];
     storedList[assetIndex] = storedList[storedList.length - 1];
     storedList.pop();
 
@@ -375,7 +378,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
     (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(
       redeemer,
-      CToken(cToken),
+      XTokenBase(cToken),
       redeemTokens,
       0
     );
@@ -401,7 +404,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     address redeemer,
     uint redeemAmount,
     uint redeemTokens
-  ) external override {
+  ) external pure override {
     // Shh - currently unused
     cToken;
     redeemer;
@@ -431,12 +434,13 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       return uint(Error.MARKET_NOT_LISTED);
     }
 
+    Error err;
     if (!markets[cToken].accountMembership[borrower]) {
       // only cTokens may call borrowAllowed if borrower not in market
       require(msg.sender == cToken, "sender must be cToken");
 
       // attempt to add borrower to the market
-      Error err = addToMarketInternal(CToken(msg.sender), borrower);
+      err = addToMarketInternal(XTokenBase(msg.sender), borrower);
       if (err != Error.NO_ERROR) {
         return uint(err);
       }
@@ -445,21 +449,22 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       assert(markets[cToken].accountMembership[borrower]);
     }
 
-    if (oracle.getUnderlyingPrice(CToken(cToken)) == 0) {
+    if (oracle.getUnderlyingPrice(XTokenBase(cToken)) == 0) {
       return uint(Error.PRICE_ERROR);
     }
 
     uint borrowCap = borrowCaps[cToken];
     // Borrow cap of 0 corresponds to unlimited borrowing
     if (borrowCap != 0) {
-      uint totalBorrows = CToken(cToken).totalBorrows();
+      uint totalBorrows = XTokenBase(cToken).totalBorrows();
       uint nextTotalBorrows = add_(totalBorrows, borrowAmount);
       require(nextTotalBorrows < borrowCap, "market borrow cap reached");
     }
 
-    (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(
+    uint256 shortfall;
+    (err, , shortfall) = getHypotheticalAccountLiquidityInternal(
       borrower,
-      CToken(cToken),
+      XTokenBase(cToken),
       0,
       borrowAmount
     );
@@ -471,7 +476,9 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     }
 
     // Keep the flywheel moving
-    Exp memory borrowIndex = Exp({ mantissa: CToken(cToken).borrowIndex() });
+    Exp memory borrowIndex = Exp({
+      mantissa: XTokenBase(cToken).borrowIndex()
+    });
     updateCompBorrowIndex(cToken, borrowIndex);
     distributeBorrowerComp(cToken, borrower, borrowIndex);
 
@@ -524,7 +531,9 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     }
 
     // Keep the flywheel moving
-    Exp memory borrowIndex = Exp({ mantissa: CToken(cToken).borrowIndex() });
+    Exp memory borrowIndex = Exp({
+      mantissa: XTokenBase(cToken).borrowIndex()
+    });
     updateCompBorrowIndex(cToken, borrowIndex);
     distributeBorrowerComp(cToken, borrower, borrowIndex);
 
@@ -572,7 +581,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     address liquidator,
     address borrower,
     uint repayAmount
-  ) external override returns (uint) {
+  ) external view override returns (uint) {
     // Shh - currently unused
     liquidator;
 
@@ -582,10 +591,12 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       return uint(Error.MARKET_NOT_LISTED);
     }
 
-    uint borrowBalance = CToken(cTokenBorrowed).borrowBalanceStored(borrower);
+    uint borrowBalance = XTokenBase(cTokenBorrowed).borrowBalanceStored(
+      borrower
+    );
 
     /* allow accounts to be liquidated if the market is deprecated */
-    if (isDeprecated(CToken(cTokenBorrowed))) {
+    if (isDeprecated(XTokenBase(cTokenBorrowed))) {
       require(
         borrowBalance >= repayAmount,
         "Can not repay more than the total borrow"
@@ -671,8 +682,8 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     }
 
     if (
-      CToken(cTokenCollateral).comptroller() !=
-      CToken(cTokenBorrowed).comptroller()
+      XTokenBase(cTokenCollateral).comptroller() !=
+      XTokenBase(cTokenBorrowed).comptroller()
     ) {
       return uint(Error.COMPTROLLER_MISMATCH);
     }
@@ -805,7 +816,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       uint shortfall
     ) = getHypotheticalAccountLiquidityInternal(
         account,
-        CToken(address(0)),
+        XTokenBase(address(0)),
         0,
         0
       );
@@ -825,7 +836,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return
       getHypotheticalAccountLiquidityInternal(
         account,
-        CToken(address(0)),
+        XTokenBase(address(0)),
         0,
         0
       );
@@ -853,7 +864,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       uint shortfall
     ) = getHypotheticalAccountLiquidityInternal(
         account,
-        CToken(cTokenModify),
+        XTokenBase(cTokenModify),
         redeemTokens,
         borrowAmount
       );
@@ -874,7 +885,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
      */
   function getHypotheticalAccountLiquidityInternal(
     address account,
-    CToken cTokenModify,
+    XTokenBase cTokenModify,
     uint redeemTokens,
     uint borrowAmount
   ) internal view returns (Error, uint, uint) {
@@ -882,9 +893,9 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     uint oErr;
 
     // For each asset the account is in
-    CToken[] memory assets = accountAssets[account];
+    XTokenBase[] memory assets = accountAssets[account];
     for (uint i = 0; i < assets.length; i++) {
-      CToken asset = assets[i];
+      XTokenBase asset = assets[i];
 
       // Read the balances and exchange rate from the cToken
       (
@@ -980,10 +991,10 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
   ) external view override returns (uint, uint) {
     /* Read oracle prices for borrowed and collateral markets */
     uint priceBorrowedMantissa = oracle.getUnderlyingPrice(
-      CToken(cTokenBorrowed)
+      XTokenBase(cTokenBorrowed)
     );
     uint priceCollateralMantissa = oracle.getUnderlyingPrice(
-      CToken(cTokenCollateral)
+      XTokenBase(cTokenCollateral)
     );
     if (priceBorrowedMantissa == 0 || priceCollateralMantissa == 0) {
       return (uint(Error.PRICE_ERROR), 0);
@@ -995,7 +1006,8 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
      *  seizeTokens = seizeAmount / exchangeRate
      *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
      */
-    uint exchangeRateMantissa = CToken(cTokenCollateral).exchangeRateStored(); // Note: reverts on error
+    uint exchangeRateMantissa = XTokenBase(cTokenCollateral)
+      .exchangeRateStored(); // Note: reverts on error
     uint seizeTokens;
     Exp memory numerator;
     Exp memory denominator;
@@ -1023,14 +1035,16 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @dev Admin function to set a new price oracle
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function _setPriceOracle(PriceOracle newOracle) public returns (uint) {
+  function _setPriceOracle(
+    PriceOracleAbstract newOracle
+  ) public returns (uint) {
     // Check caller is admin
     if (msg.sender != admin) {
       return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
     }
 
     // Track the old oracle for the comptroller
-    PriceOracle oldOracle = oracle;
+    PriceOracleAbstract oldOracle = oracle;
 
     // Set comptroller's oracle to newOracle
     oracle = newOracle;
@@ -1068,7 +1082,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
    */
   function _setCollateralFactor(
-    CToken cToken,
+    XTokenBase cToken,
     uint newCollateralFactorMantissa
   ) external returns (uint) {
     // Check caller is admin
@@ -1165,7 +1179,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param cToken The address of the market (token) to list
    * @return uint 0=success, otherwise a failure. (See enum Error for details)
    */
-  function _supportMarket(CToken cToken) external returns (uint) {
+  function _supportMarket(XTokenBase cToken) external returns (uint) {
     if (msg.sender != admin) {
       return fail(Error.UNAUTHORIZED, FailureInfo.SUPPORT_MARKET_OWNER_CHECK);
     }
@@ -1193,9 +1207,9 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
   function _addMarketInternal(address cToken) internal {
     for (uint i = 0; i < allMarkets.length; i++) {
-      require(allMarkets[i] != CToken(cToken), "market already added");
+      require(allMarkets[i] != XTokenBase(cToken), "market already added");
     }
-    allMarkets.push(CToken(cToken));
+    allMarkets.push(XTokenBase(cToken));
   }
 
   function _initializeMarket(address cToken) internal {
@@ -1233,7 +1247,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
    */
   function _setMarketBorrowCaps(
-    CToken[] calldata cTokens,
+    XTokenBase[] calldata cTokens,
     uint[] calldata newBorrowCaps
   ) external {
     require(
@@ -1292,7 +1306,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return uint(Error.NO_ERROR);
   }
 
-  function _setMintPaused(CToken cToken, bool state) public returns (bool) {
+  function _setMintPaused(XTokenBase cToken, bool state) public returns (bool) {
     require(
       markets[address(cToken)].isListed,
       "cannot pause a market that is not listed"
@@ -1308,7 +1322,10 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return state;
   }
 
-  function _setBorrowPaused(CToken cToken, bool state) public returns (bool) {
+  function _setBorrowPaused(
+    XTokenBase cToken,
+    bool state
+  ) public returns (bool) {
     require(
       markets[address(cToken)].isListed,
       "cannot pause a market that is not listed"
@@ -1348,12 +1365,12 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return state;
   }
 
-  function _become(Unitroller unitroller) public {
+  function _become(XesProxy xesProxy) public {
     require(
-      msg.sender == unitroller.admin(),
-      "only unitroller admin can change brains"
+      msg.sender == xesProxy.admin(),
+      "only xesProxy's admin can change brains"
     );
-    require(unitroller._acceptImplementation() == 0, "change not authorized");
+    require(xesProxy._acceptImplementation() == 0, "change not authorized");
   }
 
   /**
@@ -1372,7 +1389,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param borrowSpeed New borrow-side COMP speed for market
    */
   function setCompSpeedInternal(
-    CToken cToken,
+    XTokenBase cToken,
     uint supplySpeed,
     uint borrowSpeed
   ) internal {
@@ -1420,7 +1437,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       uint(supplyState.timestamp)
     );
     if (deltaTimestamp > 0 && supplySpeed > 0) {
-      uint supplyTokens = CToken(cToken).totalSupply();
+      uint supplyTokens = XTokenBase(cToken).totalSupply();
       uint compAccrued_ = mul_(deltaTimestamp, supplySpeed);
       Double memory ratio = supplyTokens > 0
         ? fraction(compAccrued_, supplyTokens)
@@ -1450,7 +1467,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     uint deltaTimestamp = sub_(uint(timestamp), uint(borrowState.timestamp));
     if (deltaTimestamp > 0 && borrowSpeed > 0) {
       uint borrowAmount = div_(
-        CToken(cToken).totalBorrows(),
+        XTokenBase(cToken).totalBorrows(),
         marketBorrowIndex
       );
       uint compAccrued_ = mul_(deltaTimestamp, borrowSpeed);
@@ -1496,7 +1513,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
       mantissa: sub_(supplyIndex, supplierIndex)
     });
 
-    uint supplierTokens = CToken(cToken).balanceOf(supplier);
+    uint supplierTokens = XTokenBase(cToken).balanceOf(supplier);
 
     // Calculate COMP accrued: cTokenAmount * accruedPerCToken
     uint supplierDelta = mul_(supplierTokens, deltaIndex);
@@ -1505,7 +1522,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     compAccrued[supplier] = supplierAccrued;
 
     emit DistributedSupplierComp(
-      CToken(cToken),
+      XTokenBase(cToken),
       supplier,
       supplierDelta,
       supplyIndex
@@ -1547,7 +1564,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     });
 
     uint borrowerAmount = div_(
-      CToken(cToken).borrowBalanceStored(borrower),
+      XTokenBase(cToken).borrowBalanceStored(borrower),
       marketBorrowIndex
     );
 
@@ -1558,7 +1575,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     compAccrued[borrower] = borrowerAccrued;
 
     emit DistributedBorrowerComp(
-      CToken(cToken),
+      XTokenBase(cToken),
       borrower,
       borrowerDelta,
       borrowIndex
@@ -1598,7 +1615,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param holder The address to claim COMP for
    * @param cTokens The list of markets to claim COMP in
    */
-  function claimComp(address holder, CToken[] memory cTokens) public {
+  function claimComp(address holder, XTokenBase[] memory cTokens) public {
     address[] memory holders = new address[](1);
     holders[0] = holder;
     claimComp(holders, cTokens, true, true);
@@ -1613,12 +1630,12 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    */
   function claimComp(
     address[] memory holders,
-    CToken[] memory cTokens,
+    XTokenBase[] memory cTokens,
     bool borrowers,
     bool suppliers
   ) public {
     for (uint i = 0; i < cTokens.length; i++) {
-      CToken cToken = cTokens[i];
+      XTokenBase cToken = cTokens[i];
       require(markets[address(cToken)].isListed, "market must be listed");
       if (borrowers == true) {
         Exp memory borrowIndex = Exp({ mantissa: cToken.borrowIndex() });
@@ -1684,7 +1701,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param borrowSpeeds New borrow-side COMP speed for the corresponding market.
    */
   function _setCompSpeeds(
-    CToken[] memory cTokens,
+    XTokenBase[] memory cTokens,
     uint[] memory supplySpeeds,
     uint[] memory borrowSpeeds
   ) public {
@@ -1730,7 +1747,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @dev The automatic getter may be used to access an individual market.
    * @return The list of market addresses
    */
-  function getAllMarkets() public view returns (CToken[] memory) {
+  function getAllMarkets() public view returns (XTokenBase[] memory) {
     return allMarkets;
   }
 
@@ -1739,7 +1756,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @dev All borrows in a deprecated cToken market can be immediately liquidated
    * @param cToken The market to check if deprecated
    */
-  function isDeprecated(CToken cToken) public view returns (bool) {
+  function isDeprecated(XTokenBase cToken) public view returns (bool) {
     return
       markets[address(cToken)].collateralFactorMantissa == 0 &&
       borrowGuardianPaused[address(cToken)] == true &&

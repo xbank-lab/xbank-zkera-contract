@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts/InterestRateModelAbstract.sol";
 
 /**
@@ -22,7 +22,7 @@ contract XEtherImmutable is XTokenBase {
    * @param admin_ Address of the administrator of this token
    */
   constructor(
-    ComptrollerAbstract comptroller_,
+    XesAbstract comptroller_,
     InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,

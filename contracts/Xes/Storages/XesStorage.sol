@@ -3,8 +3,9 @@ pragma solidity ^0.8.10;
 
 import { XesProxyStorage } from "@xbank-zkera/Xes/Storages/XesProxyStorage.sol";
 import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
+import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
 
-contract XesV1Storage is XesProxyStorage {
+contract XesStorage is XesProxyStorage {
   /**
    * @notice Oracle which gives the price of any given asset
    */
@@ -28,7 +29,7 @@ contract XesV1Storage is XesProxyStorage {
   /**
    * @notice Per-account mapping of "assets you are in", capped by maxAssets
    */
-  mapping(address => CToken[]) public accountAssets;
+  mapping(address => XTokenBase[]) public accountAssets;
 
   // From ComptrollerV2Storage
   struct Market {
@@ -73,7 +74,7 @@ contract XesV1Storage is XesProxyStorage {
   }
 
   /// @notice A list of all markets
-  CToken[] public allMarkets;
+  XTokenBase[] public allMarkets;
 
   /// @notice The rate at which the flywheel distributes COMP, per block
   uint public compRate;

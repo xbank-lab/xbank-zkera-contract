@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import { ComptrollerAbstract } from "@xbank-zkera/Comptrollers/Abstracts/ComptrollerAbstract.sol";
+import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { XTokenAbstract } from "@xbank-zkera/X/Abstracts/XTokenAbstract.sol";
 import { XTokenError } from "@xbank-zkera/Errors/XTokenError.sol";
 import { Erc20Interface } from "@xbank-zkera/Interfaces/Erc20Interface.sol";
@@ -28,7 +28,7 @@ abstract contract XTokenBase is
    * @param decimals_ EIP-20 decimal precision of this token
    */
   function initialize(
-    ComptrollerAbstract comptroller_,
+    XesAbstract comptroller_,
     InterestRateModelAbstract interestRateModel_,
     uint initialExchangeRateMantissa_,
     string memory name_,
@@ -1078,14 +1078,14 @@ abstract contract XTokenBase is
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _setComptroller(
-    ComptrollerAbstract newComptroller
+    XesAbstract newComptroller
   ) public override returns (uint) {
     // Check caller is admin
     if (msg.sender != admin) {
       revert SetComptrollerOwnerCheck();
     }
 
-    ComptrollerAbstract oldComptroller = comptroller;
+    XesAbstract oldComptroller = comptroller;
     // Ensure invoke comptroller.isComptroller() returns true
     require(newComptroller.isComptroller(), "marker method returned false");
 
