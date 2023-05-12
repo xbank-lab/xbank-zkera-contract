@@ -18,7 +18,7 @@ contract SimplePriceOracle is PriceOracleAbstract {
     XTokenBase xToken
   ) private view returns (address) {
     address asset;
-    if (compareStrings(xToken.symbol(), "cETH")) {
+    if (compareStrings(xToken.symbol(), "xETH")) {
       asset = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     } else {
       asset = address(XErc20Base(address(xToken)).underlying());
