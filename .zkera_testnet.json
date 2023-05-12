@@ -1,25 +1,25 @@
 {
-  "Comptroller": "",
+  "Xes": "",
   "PriceOracle": "",
   "markets": [
     {
       "id": 0,
-      "symbol": "cETH",
+      "symbol": "xETH",
       "address": "0x"
     },
     {
       "id": 0,
-      "symbol": "cUSDC",
+      "symbol": "xUSDC",
       "address": "0x"
     },
     {
       "id": 0,
-      "symbol": "cDAI",
+      "symbol": "xDAI",
       "address": "0x"
     },
     {
       "id": 0,
-      "symbol": "cBTC",
+      "symbol": "xWBTC",
       "address": "0x"
     }
   ],

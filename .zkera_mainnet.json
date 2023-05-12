@@ -1,15 +1,15 @@
 {
-  "Comptroller": "",
+  "Xes": "",
   "PriceOracle": "",
   "markets": [
     {
       "id": 0,
-      "symbol": "cETH",
+      "symbol": "xETH",
       "address": "0x"
     },
     {
       "id": 0,
-      "symbol": "cUSDC",
+      "symbol": "xUSDC",
       "address": "0x"
     }
   ],

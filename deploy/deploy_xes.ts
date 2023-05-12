@@ -2,8 +2,8 @@ import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { Comptroller__factory } from "../typechain";
-import { deployComptroller } from "./utils/deploy";
+import { deployXes } from "./utils/deploy";
+import { XesImpl__factory } from "../typechain";
 
 dotEnvConfig();
 
@@ -18,16 +18,16 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // deploy comptroller
-  let comptroller = await deployComptroller(deployer);
-  const comptrollerAsDeployer = Comptroller__factory.connect(
-    comptroller.address,
+  // deploy xes
+  let xes = await deployXes(deployer);
+  const xesAsDeployer = XesImpl__factory.connect(
+    xes.address,
     deployer.zkWallet
   );
-  console.log(`# Comptroller deployed at: ${comptroller.address}`);
+  console.log(`# Xes deployed at: ${xes.address}`);
 
-  // set price oracle to comptroller
-  tx = await comptrollerAsDeployer._setPriceOracle(priceOracleAddress);
+  // set price oracle to xes
+  tx = await xesAsDeployer._setPriceOracle(priceOracleAddress);
   await tx.wait();
-  console.log("# SetPriceOracle to comptroller at: ", priceOracleAddress);
+  console.log("# SetPriceOracle to xes at: ", priceOracleAddress);
 }

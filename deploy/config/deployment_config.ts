@@ -1,6 +1,6 @@
-import { CTokenType, InterestRateModelType } from "../../utils/enums";
+import { XTokenType, InterestRateModelType } from "../../utils/enums";
 import {
-  CTokenConfigs,
+  XTokenConfigs,
   InterestRateModelConfigs,
 } from "../../utils/interfaces";
 
@@ -29,60 +29,60 @@ export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
   },
 };
 
-export const CTOKEN: CTokenConfigs = {
-  cETH: {
-    symbol: "cETH",
-    type: CTokenType.CEther,
+export const XTOKEN: XTokenConfigs = {
+  xETH: {
+    symbol: "xETH",
+    type: XTokenType.XEtherImmutable,
     args: {
       underlying: "0x",
-      comptroller: "0x",
+      xes: "0x",
       interestRateModel: "0x",
       initialExchangeRateMantissa: "200000000000000000000000000",
       name: "xBank Ether",
-      symbol: "cETH",
+      symbol: "xETH",
       decimals: 8,
       admin: "0x",
     },
   },
-  cUSDC: {
-    symbol: "cUSDC",
-    type: CTokenType.CErc20,
+  xUSDC: {
+    symbol: "xUSDC",
+    type: XTokenType.XErc20Immutable,
     args: {
       underlying: "0x",
-      comptroller: "0x",
+      xes: "0x",
       interestRateModel: "0x",
       initialExchangeRateMantissa: "200000000000000",
       name: "xBank USD Coin",
-      symbol: "cUSDC",
+      symbol: "xUSDC",
       decimals: 8,
       admin: "0x",
     },
   },
-  cUSDT: {
-    symbol: "cUSDT",
-    type: CTokenType.CErc20Delegator,
+  xUSDT: {
+    symbol: "xUSDT",
+    type: XTokenType.XErc20Proxy,
     args: {
       underlying: "0x",
-      comptroller: "0x",
+      xes: "0x",
       interestRateModel: "0x",
       initialExchangeRateMantissa: "200000000000000",
       name: "xBank USDT",
-      symbol: "cUSDT",
+      symbol: "xUSDT",
       decimals: 8,
       admin: "0x00",
       implementation: "0x",
     },
   },
-  cWBTC: {
-    symbol: "cWBTC",
-    type: CTokenType.CErc20Delegator,
+  xWBTC: {
+    symbol: "xWBTC",
+    type: XTokenType.XErc20Proxy,
     args: {
       underlying: "0x",
-      comptroller: "0x",
+      xes: "0x",
       interestRateModel: "0x",
       initialExchangeRateMantissa: "20000000000000000",
       name: "xBank Wrapped BTC",
-      symbol: "cWBTC",
+      symbol: "xWBTC",
       decimals: 8,
       admin: "0x00",
       implementation: "0x",

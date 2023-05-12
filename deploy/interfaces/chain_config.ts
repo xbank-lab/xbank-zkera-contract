@@ -1,6 +1,6 @@
 export interface Config {
-  Comptroller: string;
-  PriceOralce: string;
+  Xes: string;
+  PriceOracle: string;
   markets: Market[];
   tokens: Tokens;
 }
@@ -11,7 +11,6 @@ export interface Comptroller {
 }
 export interface Market {
   address: string;
-  creditors: string[];
 }
 
 export interface Creditor {
