@@ -1,25 +1,25 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { BigNumberish } from "ethers";
-import { CTOKEN } from "../config/deployment_config";
-import { CTokenType } from "../../utils/enums";
+import { XTokenType } from "../../utils/enums";
+import { XTOKEN } from "../config/deployment_config";
 
 import {
-  CTokenArgs,
-  CTokenDeployArg,
-  CTokenLike,
   InterestRateModelConfig,
+  XTokenArgs,
+  XTokenDeployArg,
+  XTokenLike,
 } from "../../utils/interfaces";
 
 import {
-  CErc20Delegate,
-  CErc20Delegator,
-  CErc20Immutable,
-  CEther,
-  Comptroller,
   ERC20PresetFixedSupply,
   JumpRateModelV2,
   Multicall,
   SimplePriceOracle,
+  XErc20Immutable,
+  XErc20Impl,
+  XErc20Proxy,
+  XEtherImmutable,
+  XesImpl,
 } from "../../typechain";
 
 export async function deployERC20(
@@ -49,18 +49,16 @@ export async function deploySimplePriceOracle(
   return (await deployer.deploy(artifact)) as SimplePriceOracle;
 }
 
-export async function deployComptroller(
-  deployer: Deployer
-): Promise<Comptroller> {
+export async function deployXes(deployer: Deployer): Promise<XesImpl> {
   // deploy impl contracts
-  const implArtifact = await deployer.loadArtifact("Comptroller");
+  const implArtifact = await deployer.loadArtifact("XesImpl");
   const implContract = await deployer.deploy(implArtifact);
-  console.log("# Comptroller impl deployed at:", implContract.address);
+  console.log("# Xes impl deployed at:", implContract.address);
 
   // deploy proxy contracts
-  const proxyArtifact = await deployer.loadArtifact("Unitroller");
+  const proxyArtifact = await deployer.loadArtifact("XesProxy");
   const proxyContract = await deployer.deploy(proxyArtifact);
-  console.log("# Comptroller proxy deployed at:", proxyContract.address);
+  console.log("# Xes proxy deployed at:", proxyContract.address);
 
   // set proxy impl contract
   const setPendingImplTx = await proxyContract._setPendingImplementation(
@@ -70,8 +68,7 @@ export async function deployComptroller(
   const becomeTx = await implContract._become(proxyContract.address);
   await becomeTx.wait();
 
-  // return proxyContract as comptroller
-  return proxyContract as Comptroller;
+  return proxyContract as XesImpl;
 }
 
 export async function deployBaseJumpRateModelV2(
@@ -88,15 +85,15 @@ export async function deployBaseJumpRateModelV2(
   ])) as JumpRateModelV2;
 }
 
-export async function deployCErc20Delegator(
-  args: CTokenArgs,
+export async function deployXErc20Proxy(
+  args: XTokenArgs,
   deployer: Deployer
-): Promise<CTokenLike> {
+): Promise<XTokenLike> {
   if ("implementation" in args) {
-    const artifact = await deployer.loadArtifact("CErc20Delegator");
+    const artifact = await deployer.loadArtifact("XErc20Proxy");
     return (await deployer.deploy(artifact, [
       args.underlying,
-      args.comptroller,
+      args.xes,
       args.interestRateModel,
       args.initialExchangeRateMantissa,
       args.name,
@@ -105,129 +102,131 @@ export async function deployCErc20Delegator(
       args.admin,
       args.implementation,
       "0x00",
-    ])) as CErc20Delegator;
+    ])) as XErc20Proxy;
   }
-  return (await deployCErc20Immutable(args, deployer)) as CErc20Immutable;
+  return (await deployXErc20Immutable(args, deployer)) as XErc20Immutable;
 }
 
-export async function deployCErc20Immutable(
-  args: CTokenArgs,
+export async function deployXErc20Immutable(
+  args: XTokenArgs,
   deployer: Deployer
-): Promise<CErc20Immutable> {
-  const artifact = await deployer.loadArtifact("CErc20Immutable");
+): Promise<XErc20Immutable> {
+  const artifact = await deployer.loadArtifact("XErc20Immutable");
   return (await deployer.deploy(artifact, [
     args.underlying,
-    args.comptroller,
+    args.xes,
     args.interestRateModel,
     args.initialExchangeRateMantissa,
     args.name,
     args.symbol,
     args.decimals,
     args.admin,
-  ])) as CErc20Immutable;
+  ])) as XErc20Immutable;
 }
 
-export async function deployCToken(
-  args: CTokenArgs,
+export async function deployXToken(
+  args: XTokenArgs,
   deployer: Deployer
-): Promise<CTokenLike> {
+): Promise<XTokenLike> {
   if ("implementation" in args) {
-    return deployCErc20Delegator(args, deployer);
+    return deployXErc20Proxy(args, deployer);
   }
-  return deployCErc20Immutable(args, deployer);
+  return deployXErc20Immutable(args, deployer);
 }
 
-export async function deployCErc20Delegate(
+export async function deployXErc20Impl(
   deployer: Deployer
-): Promise<CErc20Delegate> {
-  const artifact = await deployer.loadArtifact("CErc20Delegate");
-  return (await deployer.deploy(artifact)) as CErc20Delegate;
+): Promise<XErc20Impl> {
+  const artifact = await deployer.loadArtifact("XErc20Impl");
+  return (await deployer.deploy(artifact)) as XErc20Impl;
 }
 
-export async function deployCEth(
-  args: CTokenArgs,
+export async function deployXEth(
+  args: XTokenArgs,
   deployer: Deployer
-): Promise<CEther> {
-  const artifact = await deployer.loadArtifact("CEther");
+): Promise<XEtherImmutable> {
+  const artifact = await deployer.loadArtifact("XEtherImmutable");
   return (await deployer.deploy(artifact, [
-    args.comptroller,
+    args.xes,
     args.interestRateModel,
     args.initialExchangeRateMantissa,
     args.name,
     args.symbol,
     args.decimals,
     args.admin,
-  ])) as CEther;
+  ])) as XEtherImmutable;
 }
 
-export async function deployCTokens(
-  config: CTokenDeployArg[],
+export async function deployXTokens(
+  config: XTokenDeployArg[],
   priceOracle: SimplePriceOracle,
-  comptroller: Comptroller,
+  xes: XesImpl, // as deployer
   deployer: Deployer
-): Promise<Record<string, CTokenLike>> {
-  const deployedCTokens: Record<string, CTokenLike> = {};
+): Promise<Record<string, XTokenLike>> {
+  const deployedXTokens: Record<string, XTokenLike> = {};
   for (const c of config) {
-    const cTokenConf = CTOKEN[c.cToken];
+    const xTokenConf = XTOKEN[c.xToken];
 
-    cTokenConf.args.comptroller = comptroller.address;
-    cTokenConf.args.underlying = c.underlying || "0x00";
-    cTokenConf.args.interestRateModel = c.interestRateModel;
-    cTokenConf.args.admin = deployer.zkWallet.address;
+    xTokenConf.args.xes = xes.address;
+    xTokenConf.args.underlying = c.underlying || "0x00";
+    xTokenConf.args.interestRateModel = c.interestRateModel;
+    xTokenConf.args.admin = deployer.zkWallet.address;
 
     // @dev
     // delegate = impl
     // delegator = proxy
-    if (cTokenConf.type === CTokenType.CErc20Delegator) {
-      const cTokenDelegate = await deployCErc20Delegate(deployer);
-      cTokenConf.args.implementation = cTokenDelegate.address;
+    if (xTokenConf.type === XTokenType.XErc20Proxy) {
+      const xTokenImpl = await deployXErc20Impl(deployer);
+      xTokenConf.args.implementation = xTokenImpl.address;
       console.log(
-        `# Deploy CErc20Delegate of ${c.cToken}: ${cTokenDelegate.address} (impl contract)`
+        `# Deploy XErc20Impl of ${c.xToken}: ${xTokenImpl.address} (impl contract)`
       );
     }
 
-    const deployedCToken =
-      CTOKEN[c.cToken].type === CTokenType.CEther
-        ? await deployCEth(cTokenConf.args, deployer)
-        : await deployCToken(cTokenConf.args, deployer);
-    console.log(`# Deploy cToken of ${c.cToken}: ${deployedCToken.address}`);
+    const deployedXToken =
+      XTOKEN[c.xToken].type === XTokenType.XEtherImmutable
+        ? await deployXEth(xTokenConf.args, deployer)
+        : await deployXToken(xTokenConf.args, deployer);
+    console.log(`# Deploy xToken of ${c.xToken}: ${deployedXToken.address}`);
 
-    const supportMarketTx = await comptroller._supportMarket(
-      deployedCToken.address
-    );
+    const supportMarketTx = await xes._supportMarket(deployedXToken.address);
     await supportMarketTx.wait();
     console.log(
-      `# Set comptroller to support ${c.cToken} market (${deployedCToken.address})`
+      `# Set xes to support ${c.xToken} market (${deployedXToken.address})`
     );
 
-    if (cTokenConf.type === CTokenType.CEther) {
+    if (xTokenConf.type === XTokenType.XEtherImmutable) {
       await priceOracle.setDirectPrice(
         "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
         c.underlyingPrice || 0
       );
     } else {
       await priceOracle.setUnderlyingPrice(
-        deployedCToken.address,
+        deployedXToken.address,
         c.underlyingPrice || 0
       );
     }
+    const underlyingPrice = await priceOracle.getUnderlyingPrice(
+      deployedXToken.address
+    );
     console.log(
-      `# Set price for ${c.cToken}: (${(c.underlyingPrice || 0).toString()})`
+      `# Set price for ${c.xToken}: (${(underlyingPrice || 0).toString()})`
     );
 
     if (c.collateralFactor) {
-      await comptroller._setCollateralFactor(
-        deployedCToken.address,
+      const tx = await xes._setCollateralFactor(
+        deployedXToken.address,
         c.collateralFactor
       );
+      await tx.wait();
     }
     console.log(
       `# Set collateralFactor for ${
-        c.cToken
+        c.xToken
       }: (${c.collateralFactor.toString()})`
     );
 
-    deployedCTokens[c.underlyingToken] = deployedCToken;
+    deployedXTokens[c.underlyingToken] = deployedXToken;
   }
-  return deployedCTokens;
+  return deployedXTokens;
 }
