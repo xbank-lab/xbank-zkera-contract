@@ -47,10 +47,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("# Deployer address:", deployer.zkWallet.address);
 
   // connect xes
-  const comptrollerAsDeployer = XesImpl__factory.connect(
-    xesAddress,
-    deployer.zkWallet
-  );
+  const xesAsDeployer = XesImpl__factory.connect(xesAddress, deployer.zkWallet);
 
   // connect priceOracle
   const priceOracleAsDeployer = SimplePriceOracle__factory.connect(
@@ -62,7 +59,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let cTokens: Record<string, XTokenLike> = await deployXTokens(
     cTokenDeployArgs,
     priceOracleAsDeployer,
-    comptrollerAsDeployer,
+    xesAsDeployer,
     deployer
   );
   console.log("# cTokens deployment summary:");
