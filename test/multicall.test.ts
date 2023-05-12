@@ -1,39 +1,13 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { BigNumber, constants, utils } from "ethers";
+import { constants, utils } from "ethers";
 import * as hre from "hardhat";
 import { waffle } from "hardhat";
 import { Provider, Wallet } from "zksync-web3";
-import {
-  approveERC20,
-  distributeERC20,
-  distributeETH,
-  getERC20Balance,
-  getETHBalance,
-} from "./utils";
-
-import { CTokenDeployArg, CTokenLike } from "../utils/interfaces";
+import { distributeERC20 } from "./utils";
 
 import { expect } from "chai";
-import {
-  BaseJumpRateModelV2,
-  CEther__factory,
-  Comptroller,
-  Comptroller__factory,
-  ERC20PresetFixedSupply,
-  Multicall,
-  SimplePriceOracle,
-} from "../typechain";
-import { INTEREST_RATE_MODEL } from "./config/deployment_config";
-import {
-  deployComptroller,
-  deployCTokens,
-  deployERC20,
-  deployBaseJumpRateModelV2 as deployJumpRateModelV2,
-  deployMulticall,
-  deploySimplePriceOracle,
-} from "./utils/deploy";
-import { FunctionFragment } from "@ethersproject/abi";
-import { parseEther } from "ethers/lib/utils";
+import { ERC20PresetFixedSupply, Multicall } from "../typechain";
+import { deployERC20, deployMulticall } from "./utils/deploy";
 
 const DEPLOYER_WALLET_PK =
   "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
