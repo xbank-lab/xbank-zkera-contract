@@ -1,11 +1,14 @@
 {
   "name": "@xbank-finance/xbank-zkera",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.1",
   "author": "xBank development team",
   "license": "BUSL-1.1",
   "scripts": {
-    "prepublishOnly": "yarn compile",
-    "compile": "hardhat compile --network zkSyncTestnet",
+    "prepublish": "yarn compile; yarn build",
+    "build": "yarn run build:cjs",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "compile": "rm -rf artifacts-zk/ typechain/ compiled-typechain/ ; yarn compile:testnet",
+    "compile:testnet": "hardhat compile --network zkSyncTestnet",
     "test": "NODE_ENV=local hardhat test --no-compile",
     "test:compile": "NODE_ENV=local hardhat test",
     "test:testnet": "NODE_ENV=testnet hardhat test --network zkSyncTestnet",
