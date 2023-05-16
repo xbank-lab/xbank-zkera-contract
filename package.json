@@ -1,8 +1,10 @@
 {
-  "name": "xbank-zkera",
-  "version": "0.0.1",
-  "license": "MIT",
+  "name": "@xbank-finance/xbank-zkera",
+  "version": "0.1.0",
+  "author": "xBank development team",
+  "license": "BUSL-1.1",
   "scripts": {
+    "prepublishOnly": "yarn compile",
     "compile": "hardhat compile --network zkSyncTestnet",
     "test": "NODE_ENV=local hardhat test --no-compile",
     "test:compile": "NODE_ENV=local hardhat test",
@@ -52,6 +54,10 @@
     "@openzeppelin/contracts-upgradeable": "^4.8.3",
     "hardhat-preprocessor": "^0.1.5"
   },
+  "files": [
+    "typechain",
+    "artifacts-zk"
+  ],
   "engines": {
     "node": ">=16.0.0 <=18.16.0"
   }
