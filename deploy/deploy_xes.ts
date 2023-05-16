@@ -7,9 +7,12 @@ import { XesImpl__factory } from "../typechain";
 
 dotEnvConfig();
 
-// REVIEW VARIABLES CAREFULLY
+// ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const priceOracleAddress = "0x...";
+const priceOracleAddress = "0xde4C09987d1fb6FAc3Ea29a6F444e563b9cDb4Ea";
+// ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   let tx;

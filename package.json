@@ -8,6 +8,7 @@
     "test:compile": "NODE_ENV=local hardhat test",
     "test:testnet": "NODE_ENV=testnet hardhat test --network zkSyncTestnet",
     "deploy:testnet": "hardhat deploy-zksync --network zkSyncTestnet",
+    "deploy:testnet:script": "hardhat deploy-zksync --network zkSyncTestnet --script",
     "deploy:mainnet": "hardhat deploy-zksync --network zkSyncMainnet"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
-import { BigNumber, constants, utils } from "ethers";
+import { utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
 import { SimplePriceOracle__factory, XesImpl__factory } from "../typechain";
@@ -13,33 +13,34 @@ dotEnvConfig();
 // Import chain config.
 const chainConfig = getConfig();
 
-const E17 = constants.WeiPerEther.div(10);
-
-// REVIEW VARIABLES CAREFULLY
+// ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const USDC = chainConfig.tokens.USDC;
 const priceOracleAddress = "0x...";
 const xesAddress = "0x...";
-const baseJumpRateModelV2StablesAddress = "0x...";
 const baseJumpRateModelV2EthAddress = "0x...";
+const baseJumpRateModelV2StablesAddress = "0x...";
 // [IMPORTANT!] price decimals = 18 - underlying.decimals + 18
-const cTokenDeployArgs: XTokenDeployArg[] = [
+const xTokenDeployArgs: XTokenDeployArg[] = [
+  {
+    underlyingToken: "ETH",
+    xToken: "xETH",
+    underlyingPrice: utils.parseUnits("1800", 18), // 18 - 18 + 18 = 18 decimals
+    collateralFactor: utils.parseUnits("0.825", 18), // 82.5%
+    interestRateModel: baseJumpRateModelV2EthAddress,
+  },
   {
     underlyingToken: "USDC",
     xToken: "xUSDC",
     underlying: USDC,
     underlyingPrice: utils.parseUnits("1", 30), // 18 - 6 + 18 = 30 decimals
-    collateralFactor: BigNumber.from(8).mul(E17), // 0.8
+    collateralFactor: utils.parseUnits("0.855", 18), // 85.5%
     interestRateModel: baseJumpRateModelV2StablesAddress,
   },
-  {
-    underlyingToken: "ETH",
-    xToken: "xETH",
-    underlyingPrice: utils.parseUnits("1800", 18), // 18 - 18 + 18 = 18 decimals
-    collateralFactor: BigNumber.from(6).mul(E17), // 0.6
-    interestRateModel: baseJumpRateModelV2EthAddress,
-  },
 ];
+// ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   // Create deployer object and load the artifact of the contract we want to deploy.
@@ -55,17 +56,19 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     deployer.zkWallet
   );
 
-  // deploy cTokens
-  let cTokens: Record<string, XTokenLike> = await deployXTokens(
-    cTokenDeployArgs,
+  // deploy xTokens
+  let xTokens: Record<string, XTokenLike> = await deployXTokens(
+    xTokenDeployArgs,
     priceOracleAsDeployer,
     xesAsDeployer,
     deployer
   );
-  console.log("# cTokens deployment summary:");
-  for (let symbol in cTokens) {
+  console.log("# xTokens deployment summary:");
+  for (let symbol in xTokens) {
     console.log(
-      `# cToken ${cTokens[symbol].symbol} deployed at: ${cTokens[symbol].address}`
+      `# xToken ${await xTokens[symbol].symbol()} deployed at: ${
+        xTokens[symbol].address
+      }`
     );
   }
 }
