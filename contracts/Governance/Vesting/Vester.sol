@@ -37,31 +37,31 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   /**
    * States
    */
-  IERC20Upgradeable public esHMX;
-  IERC20Upgradeable public hmx;
+  IERC20Upgradeable public esXBANK;
+  IERC20Upgradeable public XBANK;
 
-  address public vestedEsHmxDestination;
-  address public unusedEsHmxDestination;
+  address public vestedEsXBANKDestination;
+  address public unusedEsXBANKDestination;
 
   mapping(address => mapping(uint256 => Item)) public items; // Array of Limit Orders of each sub-account
   mapping(address => uint256) public itemLastIndex; // The last limit order index of each sub-account
 
   function initialize(
-    address esHMXAddress,
-    address hmxAddress,
-    address vestedEsHmxDestinationAddress,
-    address unusedEsHmxDestinationAddress
+    address esXBANKAddress,
+    address XBANKAddress,
+    address vestedEsXBANKDestinationAddress,
+    address unusedEsXBANKDestinationAddress
   ) external initializer {
     ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
-    esHMX = IERC20Upgradeable(esHMXAddress);
-    hmx = IERC20Upgradeable(hmxAddress);
-    vestedEsHmxDestination = vestedEsHmxDestinationAddress;
-    unusedEsHmxDestination = unusedEsHmxDestinationAddress;
+    esXBANK = IERC20Upgradeable(esXBANKAddress);
+    XBANK = IERC20Upgradeable(XBANKAddress);
+    vestedEsXBANKDestination = vestedEsXBANKDestinationAddress;
+    unusedEsXBANKDestination = unusedEsXBANKDestinationAddress;
 
     // Santy checks
-    esHMX.totalSupply();
-    hmx.totalSupply();
+    esXBANK.totalSupply();
+    XBANK.totalSupply();
   }
 
   function vestFor(
@@ -97,10 +97,10 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
       penaltyAmount = amount - totalUnlockedAmount;
     }
 
-    esHMX.safeTransferFrom(msg.sender, address(this), amount);
+    esXBANK.safeTransferFrom(msg.sender, address(this), amount);
 
     if (penaltyAmount > 0) {
-      esHMX.safeTransfer(unusedEsHmxDestination, penaltyAmount);
+      esXBANK.safeTransfer(unusedEsXBANKDestination, penaltyAmount);
     }
 
     emit LogVest(
@@ -143,9 +143,9 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
 
     items[msg.sender][itemIndex].lastClaimTime = block.timestamp;
 
-    hmx.safeTransfer(item.owner, claimable);
+    XBANK.safeTransfer(item.owner, claimable);
 
-    esHMX.safeTransfer(vestedEsHmxDestination, claimable);
+    esXBANK.safeTransfer(vestedEsXBANKDestination, claimable);
 
     emit LogClaim(item.owner, itemIndex, claimable, item.amount - claimable);
   }
@@ -168,7 +168,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
 
     items[msg.sender][itemIndex].hasAborted = true;
 
-    esHMX.safeTransfer(msg.sender, returnAmount);
+    esXBANK.safeTransfer(msg.sender, returnAmount);
 
     emit LogAbort(msg.sender, itemIndex, returnAmount);
   }
