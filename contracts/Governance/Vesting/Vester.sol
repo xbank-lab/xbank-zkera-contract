@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IVester} from "./VesterInterface.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { IVester } from "./VesterInterface.sol";
 
 contract Vester is ReentrancyGuardUpgradeable, IVester {
   using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -37,30 +37,30 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   /**
    * States
    */
-  IERC20Upgradeable public esXB;
-  IERC20Upgradeable public XB;
+  IERC20Upgradeable public esXBANK;
+  IERC20Upgradeable public XBANK;
 
   address public vestedEsXBDestination;
-  address public unusedEsXBDestination;
+  address public unusedEsXBANKDestination;
 
   Item[] public override items;
 
   function initialize(
-    address esXBAddress,
-    address XBAddress,
-    address vestedEsXBDestinationAddress,
-    address unusedEsXBDestinationAddress
+    address esXBANKAddress,
+    address XBANKAddress,
+    address vestedEsXBANKDestinationAddress,
+    address unusedEsXBANKDestinationAddress
   ) external initializer {
     ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
-    esXB = IERC20Upgradeable(esXBAddress);
-    XB = IERC20Upgradeable(XBAddress);
-    vestedEsXBDestination = vestedEsXBDestinationAddress;
-    unusedEsXBDestination = unusedEsXBDestinationAddress;
+    esXBANK = IERC20Upgradeable(esXBANKAddress);
+    XBANK = IERC20Upgradeable(XBANKAddress);
+    vestedEsXBDestination = vestedEsXBANKDestinationAddress;
+    unusedEsXBANKDestination = unusedEsXBANKDestinationAddress;
 
     // Santy checks
-    esXB.totalSupply();
-    XB.totalSupply();
+    esXBANK.totalSupply();
+    XBANK.totalSupply();
   }
 
   function vestFor(
@@ -94,10 +94,10 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
       penaltyAmount = amount - totalUnlockedAmount;
     }
 
-    esXB.safeTransferFrom(msg.sender, address(this), amount);
+    esXBANK.safeTransferFrom(msg.sender, address(this), amount);
 
     if (penaltyAmount > 0) {
-      esXB.safeTransfer(unusedEsXBDestination, penaltyAmount);
+      esXBANK.safeTransfer(unusedEsXBANKDestination, penaltyAmount);
     }
 
     emit LogVest(
@@ -140,9 +140,9 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
 
     items[itemIndex].lastClaimTime = block.timestamp;
 
-    XB.safeTransfer(item.owner, claimable);
+    XBANK.safeTransfer(item.owner, claimable);
 
-    esXB.safeTransfer(vestedEsXBDestination, claimable);
+    esXBANK.safeTransfer(vestedEsXBDestination, claimable);
 
     emit LogClaim(item.owner, itemIndex, claimable, item.amount - claimable);
   }
@@ -165,7 +165,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
 
     items[itemIndex].hasAborted = true;
 
-    esXB.safeTransfer(msg.sender, returnAmount);
+    esXBANK.safeTransfer(msg.sender, returnAmount);
 
     emit LogAbort(msg.sender, itemIndex, returnAmount);
   }

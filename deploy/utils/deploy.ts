@@ -12,6 +12,7 @@ import {
 
 import {
   ERC20PresetFixedSupply,
+  EsXB,
   JumpRateModelV2,
   Multicall,
   SimplePriceOracle,
@@ -229,4 +230,20 @@ export async function deployXTokens(
     deployedXTokens[c.underlyingToken] = deployedXToken;
   }
   return deployedXTokens;
+}
+
+export async function deployEsXBANK(
+  args: XTokenArgs,
+  deployer: Deployer
+): Promise<EsXB> {
+  const artifact = await deployer.loadArtifact("XEtherImmutable");
+  return (await deployer.deploy(artifact, [
+    args.xes,
+    args.interestRateModel,
+    args.initialExchangeRateMantissa,
+    args.name,
+    args.symbol,
+    args.decimals,
+    args.admin,
+  ])) as XEtherImmutable;
 }

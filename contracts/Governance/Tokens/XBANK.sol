@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {BaseBridgeableToken} from "../Base/BaseBridgeableToken.sol";
+import { BaseBridgeableToken } from "../Base/BaseBridgeableToken.sol";
 
 contract XB is BaseBridgeableToken {
   constructor(
@@ -9,7 +9,7 @@ contract XB is BaseBridgeableToken {
   )
     BaseBridgeableToken(
       "xBANK token",
-      "XB",
+      "XBANK",
       18,
       1_000_000 ether,
       10_000_000 ether,
