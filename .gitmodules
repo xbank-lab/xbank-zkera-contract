@@ -1,0 +1,3 @@
+[submodule "libs/LayerZero"]
+	path = libs/LayerZero
+	url = https://github.com/LayerZero-Labs/solidity-examples.git

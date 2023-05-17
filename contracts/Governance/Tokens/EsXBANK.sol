@@ -1,19 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import { BaseBridgeableToken } from "../Base/BaseBridgeableToken.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract EsXB is BaseBridgeableToken {
-  constructor(
-    bool isBurnAndMint_
-  )
-    BaseBridgeableToken(
-      "Escrowed xBANK",
-      "esXBANK",
-      18,
-      type(uint256).max,
-      type(uint256).max,
-      isBurnAndMint_
-    )
-  {}
+contract EsXBANK is ERC20 {
+  constructor(uint256 _initialSupply) ERC20("Escrowed XBANK", "EsXBANK") {
+    _mint(_msgSender(), _initialSupply);
+  }
 }
