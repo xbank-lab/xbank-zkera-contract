@@ -1,8 +1,8 @@
-import { XEtherRepayHelper } from "./../../typechain/contracts/X/Utils/XEtherRepayHelper";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { BigNumberish } from "ethers";
+import { BigNumber, BigNumberish } from "ethers";
 import { XTokenType } from "../../utils/enums";
 import { XTOKEN } from "../config/deployment_config";
+import { XEtherRepayHelper } from "./../../typechain/contracts/X/Utils/XEtherRepayHelper";
 
 import {
   InterestRateModelConfig,
@@ -16,6 +16,7 @@ import {
   JumpRateModelV2,
   Multicall,
   SimplePriceOracle,
+  XBANK,
   XErc20Immutable,
   XErc20Impl,
   XErc20Proxy,
@@ -238,4 +239,12 @@ export async function deployXEtherRepayHelper(
 ): Promise<XEtherRepayHelper> {
   const artifact = await deployer.loadArtifact("XEtherRepayHelper");
   return (await deployer.deploy(artifact, [xETH])) as XEtherRepayHelper;
+}
+
+export async function deployXBANK(
+  deployer: Deployer,
+  totalSupply: BigNumber
+): Promise<XBANK> {
+  const artifact = await deployer.loadArtifact("XBANK");
+  return (await deployer.deploy(artifact, [totalSupply])) as XBANK;
 }
