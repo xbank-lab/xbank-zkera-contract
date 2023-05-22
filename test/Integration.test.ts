@@ -246,7 +246,7 @@ describe("Protocol fundamentals", function () {
   });
 
   context("Mint Redeem", async () => {
-    it("Should allow mint cERC20 and cETH", async function () {
+    it("Should allow mint xERC20 and xETH", async function () {
       // alice & bob approve 100e18 USDC
       await approveERC20(
         USDC,
@@ -261,14 +261,14 @@ describe("Protocol fundamentals", function () {
         utils.parseEther("100")
       );
 
-      // alice deposit 100e18 USDC, receiving 5000000000000000e8 cUSDC
+      // alice deposit 100e18 USDC, receiving 5000000000000000e8 xUSDC
       tx = await xTokens["USDC"].connect(alice).mint(utils.parseEther("100"));
       await tx.wait();
-      // bob deposit 100e18 USDC, receiving 5000000000000000e8 cUSDC
+      // bob deposit 100e18 USDC, receiving 5000000000000000e8 xUSDC
       tx = await xTokens["USDC"].connect(bob).mint(utils.parseEther("100"));
       await tx.wait();
 
-      // [check] alice & bob balance should have 90e18 USDC, 500000000000000e8 cUSDC
+      // [check] alice & bob balance should have 90e18 USDC, 500000000000000e8 xUSDC
       expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("900"));
       expect(await getERC20Balance(xTokens["USDC"], alice)).to.eq(
         utils.parseUnits("5000000000000000", 8)
@@ -278,21 +278,21 @@ describe("Protocol fundamentals", function () {
         utils.parseUnits("5000000000000000", 8)
       );
 
-      // alice deposit 0.5e18 ETH, receiving 25e8 cETH
+      // alice deposit 0.5e18 ETH, receiving 25e8 xETH
       const xETHAsAlice = XEtherImmutable__factory.connect(
         xTokens["ETH"].address,
         alice
       );
       tx = await xETHAsAlice.mint({ value: utils.parseEther("5") });
       await tx.wait();
-      // [check] alice balance should have 250e8 cETH
+      // [check] alice balance should have 250e8 xETH
       expect(await getERC20Balance(xTokens["ETH"], alice)).to.eq(
         utils.parseUnits("250", 8)
       );
     });
 
-    it("Should allow redeem cERC20 and cETH", async function () {
-      // alice approve all cUSDC to redeem
+    it("Should allow redeem xERC20 and xETH", async function () {
+      // alice approve all xUSDC to redeem
       await approveERC20(
         xTokens["USDC"],
         alice,
@@ -300,12 +300,12 @@ describe("Protocol fundamentals", function () {
         await getERC20Balance(xTokens["USDC"], alice)
       );
 
-      // alice redeem 3000000000000000e8 cUSDC for 60e18 USDC
+      // alice redeem 3000000000000000e8 xUSDC for 60e18 USDC
       tx = await xTokens["USDC"]
         .connect(alice)
         .redeem(utils.parseUnits("3000000000000000", 8));
       await tx.wait();
-      // [check] alice balance should have 900e18 + 60e18 = 960e18 USDC, 2000000000000000e8 cUSDC
+      // [check] alice balance should have 900e18 + 60e18 = 960e18 USDC, 2000000000000000e8 xUSDC
       expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("960"));
       expect(await getERC20Balance(xTokens["USDC"], alice)).to.eq(
         utils.parseUnits("2000000000000000", 8)
@@ -316,26 +316,26 @@ describe("Protocol fundamentals", function () {
         .connect(alice)
         .redeemUnderlying(utils.parseEther("20"));
       await tx.wait();
-      // [check] alice balance should have 960e18 + 20e18 = 980e18USDC, 1000000000000000e8 cUSDC
+      // [check] alice balance should have 960e18 + 20e18 = 980e18USDC, 1000000000000000e8 xUSDC
       expect(await getERC20Balance(USDC, alice)).to.eq(utils.parseEther("980"));
       expect(await getERC20Balance(xTokens["USDC"], alice)).to.eq(
         utils.parseUnits("1000000000000000", 8)
       );
 
-      // approve cETH to redeem
+      // approve xETH to redeem
       await approveERC20(
         xTokens["ETH"],
         alice,
         xTokens["ETH"].address,
         await getERC20Balance(xTokens["ETH"], alice)
       );
-      // alice redeem 50e8 cETH for 1e18 ETH
+      // alice redeem 50e8 xETH for 1e18 ETH
       const aliceETHBalanceBefore = await getETHBalance(alice);
       tx = await xTokens["ETH"]
         .connect(alice)
         .redeem(utils.parseUnits("50", 8));
       await tx.wait();
-      // [check] alice balance should have 250e8 - 50e8 = 200e8 cETH, and almost +1e18 ETH more (deducted gas)
+      // [check] alice balance should have 250e8 - 50e8 = 200e8 xETH, and almost +1e18 ETH more (deducted gas)
       expect(await getERC20Balance(xTokens["ETH"], alice)).to.eq(
         utils.parseUnits("200", 8)
       );
@@ -409,22 +409,6 @@ describe("Protocol fundamentals", function () {
       // [check] bob cannot borrow additional certain amount of ETH due to borrow limit reached
       pendingTx = xTokens["ETH"].connect(bob).borrow(utils.parseEther("0.1"));
       await expect(pendingTx).to.be.reverted;
-    });
-
-    it("Should allow repay with interest", async function () {
-      // Recap market state:
-      // ________________________________
-      // │ Market │  Alice  │    Bob    │
-      // │  ETH   │   4e18  │ -0.052e18 │
-      // │  USDC  │  20e18  │   100e18  │
-      // │  USDT  │    -    │     -     │
-      // ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-      // bob has collateral of 100 USDC ($1) at collateral factor 80% => $80
-      // bob borrowed 0.052e18 ETH ($78) which almost reach bob's borrow limit
-
-      const xesAsBob = XesImpl__factory.connect(xes.address, bob);
-
-      // wip: cannot mine zksync block
     });
   });
 });
