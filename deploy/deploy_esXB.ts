@@ -3,14 +3,14 @@ import { config as dotEnvConfig } from "dotenv";
 import { utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { deployXBANK } from "./utils/deploy";
+import { EsXB__factory } from "../typechain";
 
 dotEnvConfig();
 
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const totalSupply = utils.parseEther("10000000"); // 10M
+const initArgs = ["Escrowed XBANK", "esXB"]; // [name, symbol]
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
@@ -19,7 +19,16 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // deploy XBANK
-  let XBANK = await deployXBANK(deployer, totalSupply);
-  console.log(`# XBANK deployed at: ${XBANK.address}`);
+  // deploy esXB
+  const esXB = await hre.zkUpgrades.deployProxy(
+    deployer.zkWallet,
+    await deployer.loadArtifact("EsXB"),
+    initArgs,
+    { initializer: "initialize" }
+  );
+  await esXB.deployed();
+  console.log(`# esXB deployed at: ${esXB.address}`);
+
+  // log transferGuard
+  console.log(`# esXB transferGuard: ${await esXB.transferGuard()}`);
 }

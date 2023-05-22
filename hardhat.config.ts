@@ -11,6 +11,7 @@ import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-toolbox";
 import "@matterlabs/hardhat-zksync-chai-matchers";
 import "@matterlabs/hardhat-zksync-verify";
+import "@matterlabs/hardhat-zksync-upgradable";
 
 const chainIds = {
   goerli: 5,
@@ -54,7 +55,7 @@ module.exports = {
     target: process.env.TYPECHAIN_TARGET || "ethers-v5",
   },
   zksolc: {
-    version: "1.3.5",
+    version: "1.3.10",
     compilerSource: "binary",
     settings: {},
   },

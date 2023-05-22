@@ -3,6 +3,7 @@ import { BigNumber, BigNumberish } from "ethers";
 import { XTokenType } from "../../utils/enums";
 import { XTOKEN } from "../config/deployment_config";
 import { XEtherRepayHelper } from "./../../typechain/contracts/X/Utils/XEtherRepayHelper";
+import upgrades from "hardhat";
 
 import {
   InterestRateModelConfig,
@@ -23,6 +24,7 @@ import {
   XEtherImmutable,
   XesImpl,
 } from "../../typechain";
+import { EsXB } from "../../typechain/contracts/Governance/Tokens/EsXBANK.sol";
 
 export async function deployERC20(
   deployer: Deployer,
@@ -241,10 +243,12 @@ export async function deployXEtherRepayHelper(
   return (await deployer.deploy(artifact, [xETH])) as XEtherRepayHelper;
 }
 
-export async function deployXBANK(
+export async function deployEsXBANK(
   deployer: Deployer,
   totalSupply: BigNumber
-): Promise<XBANK> {
-  const artifact = await deployer.loadArtifact("XBANK");
+): Promise<EsXB> {
+  const artifact = await deployer.loadArtifact("esXB");
+  const box = await upgrades.deployProxy(Box, [42]);
+  await box.deployed();
   return (await deployer.deploy(artifact, [totalSupply])) as XBANK;
 }

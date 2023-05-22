@@ -12,7 +12,7 @@ dotEnvConfig();
 const chainConfig = getConfig();
 
 interface xTokenReserveFactor {
-  xToken: string;
+  symbol: string;
   address: string;
   reserveFactor: BigNumber;
 }
@@ -22,12 +22,12 @@ interface xTokenReserveFactor {
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const xTokens: xTokenReserveFactor[] = [
   {
-    xToken: "xUSDC",
+    symbol: "xUSDC",
     address: "0x...",
     reserveFactor: utils.parseUnits("0.2", 18), // 20%
   },
   {
-    xToken: "xETH",
+    symbol: "xETH",
     address: "0x...",
     reserveFactor: utils.parseUnits("0.2", 18), // 20%
   },
