@@ -7,7 +7,7 @@ import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleA
 import { XesAbstract } from "@xbank-zkera/Xes/Abstracts/XesAbstract.sol";
 import { XesStorage } from "@xbank-zkera/Xes/Storages/XesStorage.sol";
 import { XesProxy } from "@xbank-zkera/Xes/XesProxy.sol";
-import { XBANK } from "@xbank-zkera/Governance/Tokens/XBANK.sol";
+import { XB } from "@xbank-zkera/Governance/Tokens/XB.sol";
 import { ExponentialNoError } from "@xbank-zkera/Maths/ExponentialNoError.sol";
 
 /**
@@ -1670,7 +1670,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     address user,
     uint amount
   ) internal returns (uint) {
-    XBANK comp = XBANK(getDistributionToken());
+    XB comp = XB(getDistributionToken());
     uint compRemaining = comp.balanceOf(address(this));
     if (amount > 0 && amount <= compRemaining) {
       comp.transfer(user, amount);
