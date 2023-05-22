@@ -1,9 +1,7 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
-import { utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { EsXB__factory } from "../typechain";
 
 dotEnvConfig();
 
