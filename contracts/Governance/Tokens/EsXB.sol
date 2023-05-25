@@ -6,8 +6,11 @@ import { ERC20PresetMinterPauserUpgradeable } from "@openzeppelin/contracts-upgr
 contract EsXB is ERC20PresetMinterPauserUpgradeable {
   address public transferGuard = address(0);
   mapping(address => bool) public allowedFroms;
+  mapping(address => bool) public allowedTos;
 
   event UpdateAllowedFroms(address transferGuard, address from, bool allowance);
+
+  event UpdateAllowedTos(address transferGuard, address to, bool allowance);
 
   event UpdateTransferGuard(address transferGuard, address newTransferGuard);
 
@@ -43,10 +46,20 @@ contract EsXB is ERC20PresetMinterPauserUpgradeable {
     return true;
   }
 
+  function updateAllowedTo(address to, bool allowance) public returns (bool) {
+    require(
+      transferGuard == _msgSender(),
+      "Only transferGuard can updateAllowedTo"
+    );
+    allowedTos[to] = allowance;
+    emit UpdateAllowedTos(transferGuard, to, allowance);
+    return true;
+  }
+
   function transfer(address to, uint256 amount) public override returns (bool) {
     address owner = _msgSender();
     require(
-      transferGuard == owner || allowedFroms[owner],
+      transferGuard == owner || allowedFroms[owner] || allowedTos[to],
       "Transfer not allowed"
     );
     _transfer(owner, to, amount);
@@ -59,7 +72,7 @@ contract EsXB is ERC20PresetMinterPauserUpgradeable {
     uint256 amount
   ) public override returns (bool) {
     require(
-      transferGuard == _msgSender() || allowedFroms[from],
+      transferGuard == _msgSender() || allowedFroms[from] || allowedTos[to],
       "Transfer not allowed"
     );
     _transfer(from, to, amount);

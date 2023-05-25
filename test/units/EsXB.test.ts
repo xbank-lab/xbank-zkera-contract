@@ -10,6 +10,7 @@ import { waffle } from "hardhat";
 import { Provider, Wallet } from "zksync-web3";
 import { EsXB__factory } from "../../typechain/factories/contracts/Governance/Tokens/EsXB__factory";
 import { distributeETH } from "../utils";
+import { EsXB } from "../../typechain";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -31,6 +32,11 @@ describe("EsXB", function () {
   let deployer: Deployer;
   let alice: Wallet;
   let bob: Wallet;
+
+  // Connected contracts
+  let esXBAsDeployer: EsXB;
+  let esXBAsAlice: EsXB;
+  let esXBAsBob: EsXB;
 
   // Txs
   let tx;
@@ -61,6 +67,11 @@ describe("EsXB", function () {
       [alice, bob],
       [utils.parseEther("10"), utils.parseEther("10")]
     );
+
+    // connect wallets
+    esXBAsDeployer = EsXB__factory.connect(esXB.address, deployer.zkWallet);
+    esXBAsAlice = EsXB__factory.connect(esXB.address, alice);
+    esXBAsBob = EsXB__factory.connect(esXB.address, bob);
   }
 
   beforeEach(async () => {
@@ -83,37 +94,30 @@ describe("EsXB", function () {
       expect(transferGuard).to.eq(deployer.zkWallet.address);
 
       // [check] allowedFrom any address should return false
-      const canAliceTransfer = await esXBAsDeployer.allowedFroms(alice.address);
-      expect(canAliceTransfer).to.eq(false);
+      const canAliceTransferFrom = await esXBAsDeployer.allowedFroms(
+        alice.address
+      );
+      expect(canAliceTransferFrom).to.eq(false);
+
+      // [check] allowedTo any address should return false
+      const canAliceTransferTo = await esXBAsDeployer.allowedTos(alice.address);
+      expect(canAliceTransferTo).to.eq(false);
     });
 
     context("Added functionalities", async () => {
       it("Should not allow to updateTransferGuard to 0", async function () {
-        const esXBAsDeployer = EsXB__factory.connect(
-          esXB.address,
-          deployer.zkWallet
-        );
-
         // [check] update transferGuard to 0x0 should revert
         tx = esXBAsDeployer.updateTransferGuard(constants.AddressZero);
         expect(tx).to.be.reverted;
       });
 
-      it("Should not allow to updateTransferGuard by non transferGuard address", async function () {
-        const esXBAsAlice = EsXB__factory.connect(esXB.address, alice);
-
-        // [check] update transferGuard to 0x0 should revert
+      it("Should not allow to updateTransferGuard by non-transferGuard address", async function () {
+        // [check] update transferGuard by non-transferGuard
         tx = esXBAsAlice.updateTransferGuard(alice.address);
         expect(tx).to.be.reverted;
       });
 
       it("Should allow to set newTransferGuard when called by transferGuard", async function () {
-        const esXBAsDeployer = EsXB__factory.connect(
-          esXB.address,
-          deployer.zkWallet
-        );
-        const esXBAsAlice = EsXB__factory.connect(esXB.address, alice);
-
         // update transferGuard to alice
         tx = await esXBAsDeployer.updateTransferGuard(alice.address);
         await tx.wait();
@@ -131,10 +135,6 @@ describe("EsXB", function () {
 
       it("Should allow transferGuard to transfer", async function () {
         // mint 10e18 token to deployer
-        const esXBAsDeployer = EsXB__factory.connect(
-          esXB.address,
-          deployer.zkWallet
-        );
         tx = await esXBAsDeployer.mint(
           deployer.zkWallet.address,
           utils.parseEther("10")
@@ -154,30 +154,19 @@ describe("EsXB", function () {
 
       it("Should not allow others to transfer when not in allowedFroms", async function () {
         // mint 10e18 token to alice
-        const esXBAsDeployer = EsXB__factory.connect(
-          esXB.address,
-          deployer.zkWallet
-        );
         esXBAsDeployer.mint(alice.address, utils.parseEther("10"));
 
         // [check] alice cannot transfer to anyone because alice is not in allowedFroms
-        const esXBAsAlice = EsXB__factory.connect(esXB.address, alice);
         tx = esXBAsAlice.transfer(bob.address, utils.parseEther("10"));
         expect(tx).to.be.reverted;
       });
 
       it("Should allow others to transfer when in allowedFroms", async function () {
-        // mint 10e18 token to alice, bob
-        const esXBAsDeployer = EsXB__factory.connect(
-          esXB.address,
-          deployer.zkWallet
-        );
-        const esXBAsAlice = EsXB__factory.connect(esXB.address, alice);
-        const esXBAsBob = EsXB__factory.connect(esXB.address, bob);
+        // mint 10e18 token to alice
         tx = await esXBAsDeployer.mint(alice.address, utils.parseEther("10"));
         await tx.wait();
 
-        // update transferFrom
+        // update allowedFrom
         tx = await esXBAsDeployer.updateAllowedFrom(alice.address, true);
         await tx.wait();
 
@@ -190,6 +179,24 @@ describe("EsXB", function () {
         // [check] bob cannot transfer to anyone because bob is NOT in allowedFroms
         tx = esXBAsBob.transfer(alice.address, utils.parseEther("10"));
         expect(tx).to.be.reverted;
+      });
+
+      it("Should not allow others to transfer to when not in allowedTos", async function () {
+        // [check] bob cannot transfer to alice because bob is not in allowedFroms and alice also not in allowedTos
+        tx = esXBAsBob.transfer(alice.address, utils.parseEther("10"));
+        expect(tx).to.be.reverted;
+      });
+
+      it("Should allow others to transfer to when in allowedTos", async function () {
+        // update allowedTo
+        tx = await esXBAsDeployer.updateAllowedTo(alice.address, true);
+        await tx.wait();
+
+        // [check] bob can transfer to alice because alice is in allowedTos
+        tx = await esXBAsBob.transfer(alice.address, utils.parseEther("10"));
+        await tx.wait();
+        const bobBalance = await esXBAsAlice.balanceOf(bob.address);
+        expect(bobBalance).to.eq(0);
       });
     });
   });
