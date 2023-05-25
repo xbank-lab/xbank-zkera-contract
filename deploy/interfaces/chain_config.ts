@@ -3,9 +3,10 @@ export interface Config {
   PriceOracle: string;
   markets: Market[];
   tokens: Tokens;
+  pyth: string;
 }
 
-export interface Comptroller {
+export interface Xes {
   NFTStaking?: string;
   NFTBoostedLeverageController?: string;
 }

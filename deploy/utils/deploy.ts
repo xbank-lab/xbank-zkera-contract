@@ -20,6 +20,7 @@ import {
   XErc20Proxy,
   XEtherImmutable,
   XesImpl,
+  PythPriceUpdater,
 } from "../../typechain";
 
 export async function deployERC20(
@@ -47,6 +48,14 @@ export async function deploySimplePriceOracle(
 ): Promise<SimplePriceOracle> {
   const artifact = await deployer.loadArtifact("SimplePriceOracle");
   return (await deployer.deploy(artifact)) as SimplePriceOracle;
+}
+
+export async function deployPythPriceUpdater(
+  deployer: Deployer,
+  pythContract: string
+): Promise<PythPriceUpdater> {
+  const artifact = await deployer.loadArtifact("PythPriceUpdater");
+  return (await deployer.deploy(artifact, [pythContract])) as PythPriceUpdater;
 }
 
 export async function deployXes(deployer: Deployer): Promise<XesImpl> {
