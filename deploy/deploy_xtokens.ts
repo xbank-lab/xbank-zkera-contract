@@ -17,10 +17,10 @@ const chainConfig = getConfig();
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const USDC = chainConfig.tokens.USDC;
-const priceOracleAddress = "0x...";
-const xesAddress = "0x...";
-const baseJumpRateModelV2EthAddress = "0x...";
-const baseJumpRateModelV2StablesAddress = "0x...";
+const priceOracleAddress = chainConfig.PriceOracle;
+const xesAddress = chainConfig.Xes;
+const baseJumpRateModelV2EthAddress = chainConfig.InterestRateModels.xETH;
+const baseJumpRateModelV2StablesAddress = chainConfig.InterestRateModels.xUSDC;
 // [IMPORTANT!] price decimals = 18 - underlying.decimals + 18
 const xTokenDeployArgs: XTokenDeployArg[] = [
   {

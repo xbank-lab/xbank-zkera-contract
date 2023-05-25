@@ -4,13 +4,17 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
 import { deployXes } from "./utils/deploy";
 import { XesImpl__factory } from "../typechain";
+import { getConfig } from "./config/chain_config";
 
 dotEnvConfig();
+
+// Import chain config.
+const chainConfig = getConfig();
 
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const priceOracleAddress = "0x...";
+const priceOracleAddress = chainConfig.PriceOracle;
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 

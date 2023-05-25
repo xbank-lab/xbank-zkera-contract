@@ -22,20 +22,20 @@ interface xTokenDistributionSpeed {
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const transferGuardWallet = new Wallet(process.env.DEPLOYER_PK as string); // @dev: will use when esXB's transferGuard != deployer
-const xesAddress = "0x...";
-const distribTokenAddress = "0x..."; // @dev: esXB or XB
+const xesAddress = chainConfig.Xes;
+const distribTokenAddress = chainConfig.gov.esXB; // @notice: esXB or XB
 const mintDistribTokenToXes = utils.parseEther("100000");
 
 const xTokenDistributionSpeeds: xTokenDistributionSpeed[] = [
   {
     symbol: "xUSDC",
-    address: "0x...",
+    address: chainConfig.markets.xUSDC,
     supplySpeedPerSec: BigNumber.from("22633744855967100"),
     borrowSpeedPerSec: BigNumber.from("33950617283950600"),
   },
   {
     symbol: "xETH",
-    address: "0x...",
+    address: chainConfig.markets.xETH,
     supplySpeedPerSec: BigNumber.from("15089163237311400"),
     borrowSpeedPerSec: BigNumber.from("22633744855967100"),
   },
