@@ -21,7 +21,7 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
   XTokenBase[] public allMarkets;
 
   // events
-  event MarketListed(XTokenBase xToken);
+  event MarketListed(XTokenBase xToken, bytes32 pythPriceID);
 
   event PricePosted(
     address asset,
@@ -35,13 +35,17 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
   }
 
   function _supportMarket(
-    XTokenBase xToken
+    XTokenBase xToken,
+    bytes32 pythPriceID
   ) external onlyOwner returns (XTokenBase) {
+    address asset = getUnderlyingAddress(xToken);
     for (uint i = 0; i < allMarkets.length; i++) {
       require(allMarkets[i] != XTokenBase(xToken), "market already added");
     }
+    // support market & pythPriceID
+    pythPriceIDs[asset] = pythPriceID;
     allMarkets.push(XTokenBase(xToken));
-    emit MarketListed(xToken);
+    emit MarketListed(xToken, pythPriceID);
     return xToken;
   }
 
