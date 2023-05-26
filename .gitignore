@@ -13,3 +13,5 @@ cache-zk
 artifacts
 artifacts-zk
 .upgradable/*
+.upgradable/*
+

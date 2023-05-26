@@ -10,7 +10,7 @@ export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
     type: InterestRateModelType.BaseJumpRateModelV2,
     args: {
       baseRatePerYear: "20000000000000000",
-      multiplierPerYear: "180000000000000000",
+      multiplierPerYear: "220000000000000000",
       jumpMultiplierPerYear: "40000000000000000000",
       kink: "800000000000000000",
       owner: "0x00",
@@ -21,8 +21,8 @@ export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
     type: InterestRateModelType.BaseJumpRateModelV2,
     args: {
       baseRatePerYear: "0",
-      multiplierPerYear: "50000000000000000",
-      jumpMultiplierPerYear: "1090000000000000000",
+      multiplierPerYear: "60000000000000000",
+      jumpMultiplierPerYear: "1360000000000000000",
       kink: "800000000000000000",
       owner: "0x00",
     },
@@ -37,7 +37,7 @@ export const XTOKEN: XTokenConfigs = {
       underlying: "0x",
       xes: "0x",
       interestRateModel: "0x",
-      initialExchangeRateMantissa: "200000000000000000000000000",
+      initialExchangeRateMantissa: "200000000000000000000000000", // 18 +
       name: "xBank Ether",
       symbol: "xETH",
       decimals: 8,

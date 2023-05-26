@@ -1,18 +1,17 @@
 {
-  "Xes": "",
-  "PriceOracle": "",
-  "markets": [
-    {
-      "id": 0,
-      "symbol": "xETH",
-      "address": "0x"
-    },
-    {
-      "id": 0,
-      "symbol": "xUSDC",
-      "address": "0x"
-    }
-  ],
+  "Xes": "0x",
+  "PriceOracle": "0x",
+  "InterestRateModels": {
+    "xETH": "",
+    "xUSDC": ""
+  },
+  "gov": {
+    "esXB": "0x"
+  },
+  "markets": {
+    "xETH": "0x",
+    "xUSDC": "0x"
+  },
   "tokens": {
     "ETH": "0x0000000000000000000000000000000000000000",
     "USDC": "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4"

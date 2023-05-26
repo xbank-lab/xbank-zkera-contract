@@ -1,16 +1,37 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
+import { BigNumber, utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { INTEREST_RATE_MODEL } from "./config/deployment_config";
-import { deployBaseJumpRateModelV2 } from "./utils/deploy";
+import { XTokenBase__factory } from "../typechain";
+import { getConfig } from "./config/chain_config";
 
 dotEnvConfig();
+
+// Import chain config.
+const chainConfig = getConfig();
+
+interface xTokenReserveFactor {
+  symbol: string;
+  address: string;
+  reserveFactor: BigNumber;
+}
 
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const interestModelConfig = INTEREST_RATE_MODEL.IRM_STABLES_Updateable;
+const xTokens: xTokenReserveFactor[] = [
+  {
+    symbol: "xUSDC",
+    address: chainConfig.markets.xUSDC,
+    reserveFactor: utils.parseUnits("0.2", 18), // 20%
+  },
+  {
+    symbol: "xETH",
+    address: chainConfig.markets.xETH,
+    reserveFactor: utils.parseUnits("0.2", 18), // 20%
+  },
+];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
@@ -19,17 +40,18 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // deploy interest model
-  const baseJumpRateModelV2_Stables = await deployBaseJumpRateModelV2(
-    deployer,
-    interestModelConfig
-  );
-  console.log(
-    `# BaseJumpRateModelV2_Stables deployed at: ${baseJumpRateModelV2_Stables.address}`
-  );
-  console.log(`# Deployed BaseJumpRateModelV2 config:
-  baseRatePerSec = ${await baseJumpRateModelV2_Stables.baseRatePerSec()}
-  multiplierPerSec: ${await baseJumpRateModelV2_Stables.multiplierPerSec()}
-  jumpMultiplierPerSec: ${await baseJumpRateModelV2_Stables.jumpMultiplierPerSec()}
-  kink: ${await baseJumpRateModelV2_Stables.kink()}`);
+  // set reserveFactor for xTokens
+  for (let xToken of xTokens) {
+    const xTokenAsDeployer = XTokenBase__factory.connect(
+      xToken.address,
+      deployer.zkWallet
+    );
+    const prevReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
+    const tx = await xTokenAsDeployer._setReserveFactor(xToken.reserveFactor);
+    await tx.wait();
+    const newReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
+    console.log(
+      `# update ${await xTokenAsDeployer.symbol()} reserveFactor from ${prevReserveFactor} to ${newReserveFactor}`
+    );
+  }
 }
