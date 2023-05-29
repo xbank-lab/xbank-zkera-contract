@@ -2,20 +2,29 @@
 pragma solidity ^0.8.10;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PriceOracleAbstract } from "@xbank-zkera/Oracles/Abstracts/PriceOracleAbstract.sol";
 import { XTokenBase } from "@xbank-zkera/X/Bases/XTokenBase.sol";
 import { XErc20Base } from "@xbank-zkera/X/Bases/XErc20Base.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { IPyth } from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
-import { PythStructs } from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
+import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 contract PythPriceUpdater is PriceOracleAbstract, Ownable {
+  using SafeCast for int256;
+  using SafeCast for uint256;
+  using SafeCast for int32;
+
   // Pyth contract
   IPyth public pyth;
 
   /// @notice a map of underlying address to pyth priceID
-  mapping(address => bytes32) pythPriceIDs;
+  mapping(address => bytes32) public pythPriceIDs;
+
+  uint256 public maxPriceAge;
+
+  uint256 public constant MAXIMUM_PRICE_AGE = 960; // 16 mins
 
   /// @notice a list of all xtokens
   XTokenBase[] public allMarkets;
@@ -30,23 +39,33 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
     uint newPriceMantissa
   );
 
+  event SetMaxPriceAge(uint256 maxPriceAge);
+
   constructor(IPyth _pyth) {
     pyth = _pyth;
+    maxPriceAge = MAXIMUM_PRICE_AGE;
   }
 
   function _supportMarket(
     XTokenBase xToken,
     bytes32 pythPriceID
   ) external onlyOwner returns (XTokenBase) {
+    require(address(xToken) != address(0), "Invalid new market address");
     address asset = getUnderlyingAddress(xToken);
     for (uint i = 0; i < allMarkets.length; i++) {
-      require(allMarkets[i] != XTokenBase(xToken), "market already added");
+      require(allMarkets[i] != XTokenBase(xToken), "Market already added");
     }
     // support market & pythPriceID
     pythPriceIDs[asset] = pythPriceID;
     allMarkets.push(XTokenBase(xToken));
     emit MarketListed(xToken, pythPriceID);
     return xToken;
+  }
+
+  function setMaxPriceAge(uint256 _maxPriceAge) external onlyOwner {
+    require(_maxPriceAge > MAXIMUM_PRICE_AGE, "Invalid maxPriceAge");
+    maxPriceAge = _maxPriceAge;
+    emit SetMaxPriceAge(_maxPriceAge);
   }
 
   function getPythUpdateFee(
@@ -71,18 +90,24 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
     XTokenBase xToken
   ) public view override returns (uint) {
     address asset = getUnderlyingAddress(xToken);
-    PythStructs.Price memory pythPriceData = pyth.getPrice(pythPriceIDs[asset]);
+    PythStructs.Price memory pythPriceData = pyth.getPriceNoOlderThan(
+      pythPriceIDs[asset],
+      maxPriceAge
+    );
     return _toXesPriceDecimals(xToken, pythPriceData);
   }
 
-  function getUnderlyingPriceUnformatted(
+  function getPythPrice(
+    bytes32 priceID
+  ) public view returns (PythStructs.Price memory) {
+    return pyth.getPriceNoOlderThan(priceID, maxPriceAge);
+  }
+
+  function getUnderlyingPythPrice(
     XTokenBase xToken
-  ) public view returns (uint) {
+  ) public view returns (PythStructs.Price memory) {
     address asset = getUnderlyingAddress(xToken);
-    PythStructs.Price memory pythPriceData = pyth.getPrice(pythPriceIDs[asset]);
-    uint price = uint(int256(pythPriceData.price));
-    uint expo = uint(int256(pythPriceData.expo));
-    return price * (uint(10) ** (expo + 18));
+    return pyth.getPriceNoOlderThan(pythPriceIDs[asset], maxPriceAge);
   }
 
   function setPythPrices(bytes[] calldata pythPriceData) public payable {
@@ -104,19 +129,21 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
     XTokenBase xToken,
     PythStructs.Price memory pythPriceData
   ) internal view returns (uint) {
+    uint pricePrecision;
     // price decimals = 18 - underlying.decimals + 18
-    uint price = uint(int256(pythPriceData.price));
-    uint expo = uint(int256(pythPriceData.expo));
     if (compareStrings(xToken.symbol(), "xETH")) {
-      return price * (uint(10) ** uint(expo + 18));
+      pricePrecision = 10 ** 18;
     } else {
-      return
-        price *
-        (10 **
-          (expo +
-            36 -
-            ERC20(XErc20Base(address(xToken)).underlying()).decimals()));
+      pricePrecision =
+        10 ** (36 - ERC20(XErc20Base(address(xToken)).underlying()).decimals());
     }
+    uint price = uint(int256(pythPriceData.price));
+    uint256 tokenDecimals = pythPriceData.expo < 0
+      ? (10 ** int256(-pythPriceData.expo).toUint256())
+      : 10 ** int256(pythPriceData.expo).toUint256();
+    return
+      ((int256(pythPriceData.price)).toUint256() * pricePrecision) /
+      tokenDecimals;
   }
 
   function compareStrings(

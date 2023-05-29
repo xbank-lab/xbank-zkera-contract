@@ -16,5 +16,11 @@
     "ETH": "0x0000000000000000000000000000000000000000",
     "USDC": "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4"
   },
-  "pyth": "0xf087c864AEccFb6A2Bf1Af6A0382B0d0f6c5D834"
+  "pyth": "0xf087c864AEccFb6A2Bf1Af6A0382B0d0f6c5D834",
+  "pythPriceUpdater": "0x",
+  "pythNetworkEndpoint": "https://xc-mainnet.pyth.network",
+  "pythIDs": {
+    "ETH": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
+    "USDC": "0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a"
+  }
 }

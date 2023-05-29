@@ -1,5 +1,5 @@
 {
-  "Xes": "",
+  "Xes": "0x5ea4c797692746aE29eC503E6303c21db8f884d3",
   "PriceOracle": "0xde4C09987d1fb6FAc3Ea29a6F444e563b9cDb4Ea",
   "InterestRateModels": {
     "xETH": "0xE4917d1ecBd3c65f4F1f03F4f2c3062fa339e830",
@@ -18,5 +18,11 @@
     "DAI": "0x3e7676937A7E96CFB7616f255b9AD9FF47363D4b",
     "wBTC": "0x0BfcE1D53451B4a8175DD94e6e029F7d8a701e9c"
   },
-  "pyth": "0xC38B1dd611889Abc95d4E0a472A667c3671c08DE"
+  "pyth": "0xC38B1dd611889Abc95d4E0a472A667c3671c08DE",
+  "pythPriceUpdater": "0x88C550E560e96cA22e60A5e9698C74D2d8A6bF48",
+  "pythNetworkEndpoint": "https://xc-testnet.pyth.network",
+  "pythIDs": {
+    "ETH": "0xca80ba6dc32e08d06f1aa886011eed1d77c77be9eb761cc10d72b7d0a2fd57a6",
+    "USDC": "0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f2e47ab0f84fb9e7ae722"
+  }
 }
