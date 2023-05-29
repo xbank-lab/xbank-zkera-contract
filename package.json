@@ -60,6 +60,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
     "@openzeppelin/contracts-upgradeable": "^4.8.3",
+    "@pythnetwork/pyth-evm-js": "^1.16.1",
     "hardhat-preprocessor": "^0.1.5"
   },
   "files": [

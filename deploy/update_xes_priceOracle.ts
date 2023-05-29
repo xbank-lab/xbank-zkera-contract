@@ -1,10 +1,8 @@
-import { XesImpl__factory } from "./../typechain/factories/contracts/Xes/XesImpl__factory";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
-import { BigNumber, utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XTokenBase__factory } from "../typechain";
+import { XesImpl__factory } from "./../typechain/factories/contracts/Xes/XesImpl__factory";
 import { getConfig } from "./config/chain_config";
 
 dotEnvConfig();
@@ -12,17 +10,11 @@ dotEnvConfig();
 // Import chain config.
 const chainConfig = getConfig();
 
-interface xTokenReserveFactor {
-  symbol: string;
-  address: string;
-  reserveFactor: BigNumber;
-}
-
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xesAddress = "0x...";
-const newPriceOracle = "0x...";
+const xesAddress = chainConfig.Xes;
+const newPriceOracle = chainConfig.pythPriceUpdater;
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 

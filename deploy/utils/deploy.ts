@@ -1,9 +1,8 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumberish } from "ethers";
 import { XTokenType } from "../../utils/enums";
 import { XTOKEN } from "../config/deployment_config";
 import { XEtherRepayHelper } from "./../../typechain/contracts/X/Utils/XEtherRepayHelper";
-import upgrades from "hardhat";
 
 import {
   InterestRateModelConfig,
@@ -16,16 +15,14 @@ import {
   ERC20PresetFixedSupply,
   JumpRateModelV2,
   Multicall,
+  PythPriceUpdater,
   SimplePriceOracle,
-  XBANK,
   XErc20Immutable,
   XErc20Impl,
   XErc20Proxy,
   XEtherImmutable,
   XesImpl,
-  PythPriceUpdater,
 } from "../../typechain";
-import { EsXB } from "../../typechain/contracts/Governance/Tokens/EsXBANK.sol";
 
 export async function deployERC20(
   deployer: Deployer,
@@ -250,14 +247,4 @@ export async function deployXEtherRepayHelper(
 ): Promise<XEtherRepayHelper> {
   const artifact = await deployer.loadArtifact("XEtherRepayHelper");
   return (await deployer.deploy(artifact, [xETH])) as XEtherRepayHelper;
-}
-
-export async function deployEsXBANK(
-  deployer: Deployer,
-  totalSupply: BigNumber
-): Promise<EsXB> {
-  const artifact = await deployer.loadArtifact("esXB");
-  const box = await upgrades.deployProxy(Box, [42]);
-  await box.deployed();
-  return (await deployer.deploy(artifact, [totalSupply])) as XBANK;
 }
