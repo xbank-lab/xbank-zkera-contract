@@ -42,6 +42,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
+  console.log(xTokenPyths);
+
   const pythPriceUpdaterAsDeployer = PythPriceUpdater__factory.connect(
     pythPriceUpdaterAddress,
     deployer.zkWallet
