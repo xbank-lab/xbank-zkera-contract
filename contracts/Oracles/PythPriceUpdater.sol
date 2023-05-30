@@ -24,7 +24,7 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
 
   uint256 public maxPriceAge;
 
-  uint256 public constant MAXIMUM_PRICE_AGE = 960; // 16 mins
+  uint256 public constant MAXIMUM_PRICE_AGE = 4200; // 1 hr 10 min
 
   /// @notice a list of all xtokens
   XTokenBase[] public allMarkets;
