@@ -4,7 +4,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
 import { PythPriceUpdater__factory } from "./../typechain/factories/contracts/Oracles/PythPriceUpdater__factory";
 import { getConfig } from "./config/chain_config";
-import { deployPythPriceUpdater } from "./utils/deploy";
 
 dotEnvConfig();
 
@@ -19,7 +18,7 @@ interface XTokenPyth {
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const pythContract = chainConfig.pyth;
+const pythPriceUpdaterAddress = chainConfig.pythPriceUpdater;
 const xTokenPyths: XTokenPyth[] = [
   {
     symbol: "xUSDC",
@@ -43,10 +42,18 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // deploy price oracle
-  const pythPriceUpdater = await deployPythPriceUpdater(deployer, pythContract);
-  console.log(`# PythPriceUpdater deployed at: ${pythPriceUpdater.address}`);
-  console.log(
-    `# PythPriceUpdater using Pyth contract: ${await pythPriceUpdater.pyth()}`
+  const pythPriceUpdaterAsDeployer = PythPriceUpdater__factory.connect(
+    pythPriceUpdaterAddress,
+    deployer.zkWallet
   );
+  for (let xTokenPyth of xTokenPyths) {
+    tx = await pythPriceUpdaterAsDeployer._supportMarket(
+      xTokenPyth.address,
+      xTokenPyth.pythID
+    );
+    await tx.wait();
+    console.log(
+      `# Support market ${xTokenPyth.symbol} (${xTokenPyth.address}) with PythID: ${xTokenPyth.pythID}`
+    );
+  }
 }
