@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import { ProxyOFTV2 } from "@layer-zero/contracts/token/oft/v2/ProxyOFTV2.sol";
 
-contract ProxyXBANK is ProxyOFTV2 {
+contract ProxyXB is ProxyOFTV2 {
   constructor(
     address _token,
     uint8 _sharedDecimals,
