@@ -2,8 +2,8 @@
   "Xes": "0x",
   "PriceOracle": "0x",
   "InterestRateModels": {
-    "xETH": "",
-    "xUSDC": ""
+    "xETH": "0x",
+    "xUSDC": "0x"
   },
   "gov": {
     "esXB": "0x"
