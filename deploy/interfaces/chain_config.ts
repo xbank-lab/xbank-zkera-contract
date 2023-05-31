@@ -1,13 +1,17 @@
 export interface Config {
   Xes: string;
   PriceOracle: string;
-  InterestRateModels: InterestRateModel;
+  InterestRateModels: InterestRateModels;
   gov: Governance;
-  markets: Market;
+  markets: Markets;
   tokens: Tokens;
+  pyth: string; // Pyth's
+  pythNetworkEndpoint: string; // Pyth's
+  pythPriceUpdater: string; // xBank's
+  pythIDs: PythIDs;
 }
 
-export interface InterestRateModel {
+export interface InterestRateModels {
   xETH: string;
   xUSDC: string;
 }
@@ -15,17 +19,18 @@ export interface Governance {
   esXB: string;
 }
 
-export interface Market {
+export interface Markets {
   xETH: string;
   xUSDC: string;
 }
 
-export interface Creditor {
-  name: string;
-  address: string;
+export interface Tokens {
+  ETH: string;
+  USDC: string;
+  USDT?: string;
 }
 
-export interface Tokens {
+export interface PythIDs {
   ETH: string;
   USDC: string;
   USDT?: string;

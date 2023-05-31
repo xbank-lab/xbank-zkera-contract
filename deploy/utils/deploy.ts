@@ -1,9 +1,8 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumberish } from "ethers";
 import { XTokenType } from "../../utils/enums";
 import { XTOKEN } from "../config/deployment_config";
 import { XEtherRepayHelper } from "./../../typechain/contracts/X/Utils/XEtherRepayHelper";
-import upgrades from "hardhat";
 
 import {
   InterestRateModelConfig,
@@ -16,15 +15,14 @@ import {
   ERC20PresetFixedSupply,
   JumpRateModelV2,
   Multicall,
+  PythPriceUpdater,
   SimplePriceOracle,
-  XBANK,
   XErc20Immutable,
   XErc20Impl,
   XErc20Proxy,
   XEtherImmutable,
   XesImpl,
 } from "../../typechain";
-import { EsXB } from "../../typechain/contracts/Governance/Tokens/EsXBANK.sol";
 
 export async function deployERC20(
   deployer: Deployer,
@@ -51,6 +49,14 @@ export async function deploySimplePriceOracle(
 ): Promise<SimplePriceOracle> {
   const artifact = await deployer.loadArtifact("SimplePriceOracle");
   return (await deployer.deploy(artifact)) as SimplePriceOracle;
+}
+
+export async function deployPythPriceUpdater(
+  deployer: Deployer,
+  pythContract: string
+): Promise<PythPriceUpdater> {
+  const artifact = await deployer.loadArtifact("PythPriceUpdater");
+  return (await deployer.deploy(artifact, [pythContract])) as PythPriceUpdater;
 }
 
 export async function deployXes(deployer: Deployer): Promise<XesImpl> {
@@ -163,7 +169,6 @@ export async function deployXEth(
 
 export async function deployXTokens(
   config: XTokenDeployArg[],
-  priceOracle: SimplePriceOracle,
   xes: XesImpl, // as deployer
   deployer: Deployer
 ): Promise<Record<string, XTokenLike>> {
@@ -199,24 +204,6 @@ export async function deployXTokens(
       `# Set xes to support ${c.xToken} market (${deployedXToken.address})`
     );
 
-    if (xTokenConf.type === XTokenType.XEtherImmutable) {
-      await priceOracle.setDirectPrice(
-        "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-        c.underlyingPrice || 0
-      );
-    } else {
-      await priceOracle.setUnderlyingPrice(
-        deployedXToken.address,
-        c.underlyingPrice || 0
-      );
-    }
-    const underlyingPrice = await priceOracle.getUnderlyingPrice(
-      deployedXToken.address
-    );
-    console.log(
-      `# Set price for ${c.xToken}: (${(underlyingPrice || 0).toString()})`
-    );
-
     if (c.collateralFactor) {
       const tx = await xes._setCollateralFactor(
         deployedXToken.address,
@@ -241,14 +228,4 @@ export async function deployXEtherRepayHelper(
 ): Promise<XEtherRepayHelper> {
   const artifact = await deployer.loadArtifact("XEtherRepayHelper");
   return (await deployer.deploy(artifact, [xETH])) as XEtherRepayHelper;
-}
-
-export async function deployEsXBANK(
-  deployer: Deployer,
-  totalSupply: BigNumber
-): Promise<EsXB> {
-  const artifact = await deployer.loadArtifact("esXB");
-  const box = await upgrades.deployProxy(Box, [42]);
-  await box.deployed();
-  return (await deployer.deploy(artifact, [totalSupply])) as XBANK;
 }

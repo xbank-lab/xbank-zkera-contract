@@ -1,57 +1,61 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
-import { BigNumber, utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XTokenBase__factory } from "../typechain";
+import { PythPriceUpdater__factory } from "./../typechain/factories/contracts/Oracles/PythPriceUpdater__factory";
 import { getConfig } from "./config/chain_config";
 
 dotEnvConfig();
 
 // Import chain config.
 const chainConfig = getConfig();
-
-interface XTokenReserveFactor {
+interface XTokenPyth {
   symbol: string;
   address: string;
-  reserveFactor: BigNumber;
+  pythID: string;
 }
 
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xTokens: XTokenReserveFactor[] = [
+const pythPriceUpdaterAddress = chainConfig.pythPriceUpdater;
+const xTokenPyths: XTokenPyth[] = [
   {
     symbol: "xUSDC",
     address: chainConfig.markets.xUSDC,
-    reserveFactor: utils.parseUnits("0.2", 18), // 20%
+    pythID: chainConfig.pythIDs.USDC,
   },
   {
     symbol: "xETH",
     address: chainConfig.markets.xETH,
-    reserveFactor: utils.parseUnits("0.2", 18), // 20%
+    pythID: chainConfig.pythIDs.ETH,
   },
 ];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
+// An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
+  let tx;
+
   // Create deployer object and load the artifact of the contract we want to deploy.
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // set reserveFactor for xTokens
-  for (let xToken of xTokens) {
-    const xTokenAsDeployer = XTokenBase__factory.connect(
-      xToken.address,
-      deployer.zkWallet
+  console.log(xTokenPyths);
+
+  const pythPriceUpdaterAsDeployer = PythPriceUpdater__factory.connect(
+    pythPriceUpdaterAddress,
+    deployer.zkWallet
+  );
+  for (let xTokenPyth of xTokenPyths) {
+    tx = await pythPriceUpdaterAsDeployer._supportMarket(
+      xTokenPyth.address,
+      xTokenPyth.pythID
     );
-    const prevReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
-    const tx = await xTokenAsDeployer._setReserveFactor(xToken.reserveFactor);
     await tx.wait();
-    const newReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
     console.log(
-      `# update ${await xTokenAsDeployer.symbol()} reserveFactor from ${prevReserveFactor} to ${newReserveFactor}`
+      `# Support market ${xTokenPyth.symbol} (${xTokenPyth.address}) with PythID: ${xTokenPyth.pythID}`
     );
   }
 }

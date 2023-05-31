@@ -81,6 +81,9 @@ module.exports = {
   mocha: {
     timeout: 100000000,
   },
+  paths: {
+    sources: "./contracts",
+  },
   // This fully resolves paths for imports in the ./lib directory for Hardhat
   preprocess: {
     eachLine: () => ({
