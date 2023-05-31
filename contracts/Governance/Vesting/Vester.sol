@@ -118,6 +118,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   }
 
   function claimFor(uint256[] memory itemIndexes) external nonReentrant {
+    uint256 length = itemIndexes.length;
     for (uint256 i = 0; i < itemIndexes.length; ) {
       _claimFor(itemIndexes[i]);
 
