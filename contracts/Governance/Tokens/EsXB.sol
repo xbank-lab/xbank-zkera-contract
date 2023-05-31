@@ -14,6 +14,11 @@ contract EsXB is ERC20PresetMinterPauserUpgradeable {
 
   event UpdateTransferGuard(address transferGuard, address newTransferGuard);
 
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
   function initialize(
     string memory name,
     string memory symbol
