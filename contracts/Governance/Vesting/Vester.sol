@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IVester} from "./VesterInterface.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { IVester } from "./VesterInterface.sol";
 
 contract Vester is ReentrancyGuardUpgradeable, IVester {
   using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -43,7 +43,8 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   address public vestedEsXBDestination;
   address public unusedEsXBDestination;
 
-  Item[] public override items;
+  mapping(address => mapping(uint256 => Item)) public items; // Mapping of user address => array of Vesting position
+  mapping(address => uint256) public itemLastIndex; // The mapping of last Vesting position index of each user address
 
   function initialize(
     address esXBAddress,
@@ -86,7 +87,9 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
       totalUnlockedAmount: totalUnlockedAmount
     });
 
-    items.push(item);
+    uint256 orderIndex = itemLastIndex[account];
+    items[account][orderIndex] = item;
+    itemLastIndex[account]++;
 
     uint256 penaltyAmount;
 
@@ -102,7 +105,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
 
     emit LogVest(
       item.owner,
-      items.length - 1,
+      orderIndex,
       amount,
       item.startTime,
       item.endTime,
@@ -115,6 +118,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   }
 
   function claimFor(uint256[] memory itemIndexes) external nonReentrant {
+    uint256 length = itemIndexes.length;
     for (uint256 i = 0; i < itemIndexes.length; ) {
       _claimFor(itemIndexes[i]);
 
@@ -125,7 +129,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   }
 
   function _claimFor(uint256 itemIndex) internal {
-    Item memory item = items[itemIndex];
+    Item memory item = items[msg.sender][itemIndex];
 
     if (item.hasClaimed) revert IVester_Claimed();
     if (item.hasAborted) revert IVester_Aborted();
@@ -136,9 +140,9 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
     uint256 claimable = getUnlockAmount(item.amount, elapsedDuration);
 
     // If vest has ended, then mark this as claimed.
-    items[itemIndex].hasClaimed = block.timestamp > item.endTime;
+    items[msg.sender][itemIndex].hasClaimed = block.timestamp > item.endTime;
 
-    items[itemIndex].lastClaimTime = block.timestamp;
+    items[msg.sender][itemIndex].lastClaimTime = block.timestamp;
 
     XB.safeTransfer(item.owner, claimable);
 
@@ -148,7 +152,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   }
 
   function abort(uint256 itemIndex) external nonReentrant {
-    Item memory item = items[itemIndex];
+    Item memory item = items[msg.sender][itemIndex];
     if (msg.sender != item.owner) revert IVester_Unauthorized();
     if (block.timestamp > item.endTime) revert IVester_HasCompleted();
     if (item.hasClaimed) revert IVester_Claimed();
@@ -163,7 +167,7 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
     );
     uint256 returnAmount = item.totalUnlockedAmount - amountUsed;
 
-    items[itemIndex].hasAborted = true;
+    items[msg.sender][itemIndex].hasAborted = true;
 
     esXB.safeTransfer(msg.sender, returnAmount);
 
@@ -185,8 +189,31 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
     return (amount * duration) / YEAR;
   }
 
-  function nextItemId() external view returns (uint256) {
-    return items.length;
+  function getVestingPosition(
+    address user,
+    uint256 _limit,
+    uint256 _offset
+  ) external view returns (Item[] memory itemList) {
+    uint256 _len = itemLastIndex[user];
+    uint256 _startIndex = _offset;
+    uint256 _endIndex = _offset + _limit;
+    if (_startIndex > _len) return itemList;
+    if (_endIndex > _len) {
+      _endIndex = _len;
+    }
+
+    itemList = new Item[](_endIndex - _startIndex);
+
+    for (uint256 i = _startIndex; i < _endIndex; ) {
+      Item memory _item = items[user][i];
+
+      itemList[i - _offset] = _item;
+      unchecked {
+        ++i;
+      }
+    }
+
+    return itemList;
   }
 
   /// @custom:oz-upgrades-unsafe-allow constructor
