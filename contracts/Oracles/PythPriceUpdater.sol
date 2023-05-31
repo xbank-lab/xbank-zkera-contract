@@ -42,8 +42,13 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
   event SetMaxPriceAge(uint256 maxPriceAge);
 
   constructor(IPyth _pyth) {
+    require(address(_pyth) != address(0), "Invalid Pyth address");
+
     pyth = _pyth;
     maxPriceAge = MAXIMUM_PRICE_AGE;
+
+    // sanity check
+    pyth.getValidTimePeriod();
   }
 
   function supportMarket(
