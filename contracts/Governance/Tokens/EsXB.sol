@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import { ERC20PresetMinterPauserUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/presets/ERC20PresetMinterPauserUpgradeable.sol";
 
 contract EsXB is ERC20PresetMinterPauserUpgradeable {
-  address public transferGuard = address(0);
+  address public transferGuard;
   mapping(address => bool) public allowedFroms;
   mapping(address => bool) public allowedTos;
 
@@ -30,35 +30,29 @@ contract EsXB is ERC20PresetMinterPauserUpgradeable {
     transferGuard = _msgSender();
   }
 
-  function updateTransferGuard(address newTransferGuard) public returns (bool) {
+  function updateTransferGuard(address newTransferGuard) external {
     require(transferGuard == _msgSender(), "Update transferGuard not allowed");
     require(newTransferGuard != address(0), "Invalid newTransferGuard address");
     transferGuard = newTransferGuard;
     emit UpdateTransferGuard(transferGuard, newTransferGuard);
-    return true;
   }
 
-  function updateAllowedFrom(
-    address from,
-    bool allowance
-  ) public returns (bool) {
+  function updateAllowedFrom(address from, bool allowance) external {
     require(
       transferGuard == _msgSender(),
       "Only transferGuard can updateAllowedFrom"
     );
     allowedFroms[from] = allowance;
     emit UpdateAllowedFroms(transferGuard, from, allowance);
-    return true;
   }
 
-  function updateAllowedTo(address to, bool allowance) public returns (bool) {
+  function updateAllowedTo(address to, bool allowance) external {
     require(
       transferGuard == _msgSender(),
       "Only transferGuard can updateAllowedTo"
     );
     allowedTos[to] = allowance;
     emit UpdateAllowedTos(transferGuard, to, allowance);
-    return true;
   }
 
   function transfer(address to, uint256 amount) public override returns (bool) {
