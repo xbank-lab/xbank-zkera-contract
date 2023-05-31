@@ -169,7 +169,6 @@ export async function deployXEth(
 
 export async function deployXTokens(
   config: XTokenDeployArg[],
-  priceOracle: SimplePriceOracle,
   xes: XesImpl, // as deployer
   deployer: Deployer
 ): Promise<Record<string, XTokenLike>> {
@@ -203,24 +202,6 @@ export async function deployXTokens(
     await supportMarketTx.wait();
     console.log(
       `# Set xes to support ${c.xToken} market (${deployedXToken.address})`
-    );
-
-    if (xTokenConf.type === XTokenType.XEtherImmutable) {
-      await priceOracle.setDirectPrice(
-        "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-        c.underlyingPrice || 0
-      );
-    } else {
-      await priceOracle.setUnderlyingPrice(
-        deployedXToken.address,
-        c.underlyingPrice || 0
-      );
-    }
-    const underlyingPrice = await priceOracle.getUnderlyingPrice(
-      deployedXToken.address
-    );
-    console.log(
-      `# Set price for ${c.xToken}: (${(underlyingPrice || 0).toString()})`
     );
 
     if (c.collateralFactor) {

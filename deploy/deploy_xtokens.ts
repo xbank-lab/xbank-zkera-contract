@@ -17,7 +17,6 @@ const chainConfig = getConfig();
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const USDC = chainConfig.tokens.USDC;
-const priceOracleAddress = chainConfig.PriceOracle;
 const xesAddress = chainConfig.Xes;
 const baseJumpRateModelV2EthAddress = chainConfig.InterestRateModels.xETH;
 const baseJumpRateModelV2StablesAddress = chainConfig.InterestRateModels.xUSDC;
@@ -50,16 +49,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   // connect xes
   const xesAsDeployer = XesImpl__factory.connect(xesAddress, deployer.zkWallet);
 
-  // connect priceOracle
-  const priceOracleAsDeployer = SimplePriceOracle__factory.connect(
-    priceOracleAddress,
-    deployer.zkWallet
-  );
-
   // deploy xTokens
   let xTokens: Record<string, XTokenLike> = await deployXTokens(
     xTokenDeployArgs,
-    priceOracleAsDeployer,
     xesAsDeployer,
     deployer
   );
