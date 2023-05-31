@@ -46,7 +46,7 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
     maxPriceAge = MAXIMUM_PRICE_AGE;
   }
 
-  function _supportMarket(
+  function supportMarket(
     XTokenBase xToken,
     bytes32 pythPriceID
   ) external onlyOwner returns (XTokenBase) {
@@ -63,7 +63,7 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
   }
 
   function setMaxPriceAge(uint256 _maxPriceAge) external onlyOwner {
-    require(_maxPriceAge > MAXIMUM_PRICE_AGE, "Invalid maxPriceAge");
+    require(_maxPriceAge < MAXIMUM_PRICE_AGE, "Invalid maxPriceAge");
     maxPriceAge = _maxPriceAge;
     emit SetMaxPriceAge(_maxPriceAge);
   }
@@ -137,7 +137,6 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
       pricePrecision =
         10 ** (36 - ERC20(XErc20Base(address(xToken)).underlying()).decimals());
     }
-    uint price = uint(int256(pythPriceData.price));
     uint256 tokenDecimals = pythPriceData.expo < 0
       ? (10 ** int256(-pythPriceData.expo).toUint256())
       : 10 ** int256(pythPriceData.expo).toUint256();
