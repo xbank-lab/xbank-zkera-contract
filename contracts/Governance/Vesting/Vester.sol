@@ -43,8 +43,8 @@ contract Vester is ReentrancyGuardUpgradeable, IVester {
   address public vestedEsXBDestination;
   address public unusedEsXBDestination;
 
-  mapping(address => mapping(uint256 => Item)) public items; // Array of Limit Orders of each sub-account
-  mapping(address => uint256) public itemLastIndex; // The last limit order index of each sub-account
+  mapping(address => mapping(uint256 => Item)) public items; // Mapping of user address => array of Vesting position
+  mapping(address => uint256) public itemLastIndex; // The mapping of last Vesting position index of each user address
 
   function initialize(
     address esXBAddress,
