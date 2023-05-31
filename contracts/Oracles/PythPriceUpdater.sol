@@ -142,12 +142,12 @@ contract PythPriceUpdater is PriceOracleAbstract, Ownable {
       xesPricePrecision =
         10 ** (36 - ERC20(XErc20Base(address(xToken)).underlying()).decimals());
     }
-    uint256 pythPriceExpo = pythPriceData.expo < 0
+    uint256 pythPriceDecimals = pythPriceData.expo < 0
       ? (10 ** int256(-pythPriceData.expo).toUint256())
       : 10 ** int256(pythPriceData.expo).toUint256();
     return
       ((int256(pythPriceData.price)).toUint256() * xesPricePrecision) /
-      pythPriceExpo;
+      pythPriceDecimals;
   }
 
   function compareStrings(
