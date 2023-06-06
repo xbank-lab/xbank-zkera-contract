@@ -15,7 +15,7 @@ contract XEtherImmutable is XTokenBase {
   /**
    * @notice cache msg.value for calculation within the same transaction
    */
-  uint public cacheMsgValue;
+  uint internal cacheMsgValue;
 
   /**
    * @notice Construct a new CEther money market
