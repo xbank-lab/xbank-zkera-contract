@@ -11,6 +11,12 @@ import { InterestRateModelAbstract } from "@xbank-zkera/InterestModels/Abstracts
  * @author Compound
  */
 contract XEtherImmutable is XTokenBase {
+
+  /**
+   * @notice cache msg.value for calculation within the same transaction
+   */
+  uint internal cacheMsgValue;
+
   /**
    * @notice Construct a new CEther money market
    * @param comptroller_ The address of the Comptroller
@@ -53,7 +59,9 @@ contract XEtherImmutable is XTokenBase {
    * @dev Reverts upon any failure
    */
   function mint() external payable {
-    mintInternal(msg.value);
+    cacheMsgValue = msg.value;
+    mintInternal(cacheMsgValue);
+    cacheMsgValue = 0;
   }
 
   /**
@@ -93,7 +101,9 @@ contract XEtherImmutable is XTokenBase {
    * @dev Reverts upon any failure
    */
   function repayBorrow() external payable {
-    repayBorrowInternal(msg.value);
+    cacheMsgValue = msg.value;
+    repayBorrowInternal(cacheMsgValue);
+    cacheMsgValue = 0;
   }
 
   /**
@@ -102,7 +112,9 @@ contract XEtherImmutable is XTokenBase {
    * @param borrower the account with the debt being payed off
    */
   function repayBorrowBehalf(address borrower) external payable {
-    repayBorrowBehalfInternal(borrower, msg.value);
+    cacheMsgValue = msg.value;
+    repayBorrowBehalfInternal(borrower, cacheMsgValue);
+    cacheMsgValue = 0;
   }
 
   /**
@@ -116,7 +128,9 @@ contract XEtherImmutable is XTokenBase {
     address borrower,
     XTokenBase xTokenCollateral
   ) external payable {
-    liquidateBorrowInternal(borrower, msg.value, xTokenCollateral);
+    cacheMsgValue = msg.value;
+    liquidateBorrowInternal(borrower, cacheMsgValue, xTokenCollateral);
+    cacheMsgValue = 0;
   }
 
   /**
@@ -124,14 +138,19 @@ contract XEtherImmutable is XTokenBase {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function _addReserves() external payable returns (uint) {
-    return _addReservesInternal(msg.value);
+    cacheMsgValue = msg.value;
+    uint err = _addReservesInternal(cacheMsgValue);
+    cacheMsgValue = 0;
+    return err;
   }
 
   /**
    * @notice Send Ether to CEther to mint
    */
   receive() external payable {
-    mintInternal(msg.value);
+    cacheMsgValue = msg.value;
+    mintInternal(cacheMsgValue);
+    cacheMsgValue = 0;
   }
 
   /*** Safe Token ***/
@@ -142,7 +161,7 @@ contract XEtherImmutable is XTokenBase {
    * @return The quantity of Ether owned by this contract
    */
   function getCashPrior() internal view override returns (uint) {
-    return address(this).balance - msg.value;
+    return address(this).balance - cacheMsgValue;
   }
 
   /**
