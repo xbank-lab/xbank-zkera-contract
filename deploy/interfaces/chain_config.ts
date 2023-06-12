@@ -1,26 +1,37 @@
 export interface Config {
-  Comptroller: string;
-  PriceOralce: string;
-  markets: Market[];
+  Xes: string;
+  InterestRateModels: InterestRateModels;
+  gov: Governance;
+  markets: Markets;
   tokens: Tokens;
+  xETHRepayHelper: string;
+  pyth: string; // Pyth's
+  pythNetworkEndpoint: string; // Pyth's
+  pythPriceUpdater: string; // xBank's
+  pythIDs: PythIDs;
 }
 
-export interface Comptroller {
-  NFTStaking?: string;
-  NFTBoostedLeverageController?: string;
+export interface InterestRateModels {
+  xETH: string;
+  xUSDC: string;
 }
-export interface Market {
-  address: string;
-  creditors: string[];
+export interface Governance {
+  esXB: string;
 }
 
-export interface Creditor {
-  name: string;
-  address: string;
+export interface Markets {
+  xETH: string;
+  xUSDC: string;
 }
 
 export interface Tokens {
   ETH: string;
-  USDC?: string;
+  USDC: string;
+  USDT?: string;
+}
+
+export interface PythIDs {
+  ETH: string;
+  USDC: string;
   USDT?: string;
 }

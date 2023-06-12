@@ -1,6 +1,8 @@
+import fs from "fs";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-preprocessor";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@typechain/hardhat";
 
@@ -9,6 +11,7 @@ import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-toolbox";
 import "@matterlabs/hardhat-zksync-chai-matchers";
 import "@matterlabs/hardhat-zksync-verify";
+import "@matterlabs/hardhat-zksync-upgradable";
 
 const chainIds = {
   goerli: 5,
@@ -34,6 +37,14 @@ const zkSyncTestnet =
           "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
       };
 
+function getRemappings() {
+  return fs
+    .readFileSync("remappings.txt", "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.trim().split("="));
+}
+
 module.exports = {
   // defaultNetwork: "zkSyncTestnet",
   solidity: {
@@ -44,7 +55,7 @@ module.exports = {
     target: process.env.TYPECHAIN_TARGET || "ethers-v5",
   },
   zksolc: {
-    version: "1.3.5",
+    version: "1.3.10",
     compilerSource: "binary",
     settings: {},
   },
@@ -69,6 +80,24 @@ module.exports = {
   },
   mocha: {
     timeout: 100000000,
+  },
+  paths: {
+    sources: "./contracts",
+  },
+  // This fully resolves paths for imports in the ./lib directory for Hardhat
+  preprocess: {
+    eachLine: () => ({
+      transform: (line: string) => {
+        if (line.match(/^\s*import /i)) {
+          getRemappings().forEach(([find, replace]) => {
+            if (line.match(find)) {
+              line = line.replace(find, replace);
+            }
+          });
+        }
+        return line;
+      },
+    }),
   },
   etherscan: {
     apiKey: "", //<Your API key for Etherscan>,

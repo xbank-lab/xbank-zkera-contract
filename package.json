@@ -1,14 +1,21 @@
 {
-  "name": "xbank-zkera",
+  "name": "@xbank-finance/xbank-zkera",
   "version": "0.1.1",
-  "license": "MIT",
+  "author": "xBank development team",
+  "license": "BUSL-1.1",
   "scripts": {
-    "compile": "hardhat compile --network zkSyncTestnet",
+    "prepublish": "yarn compile; yarn build",
+    "build": "yarn run build:cjs",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "compile": "rm -rf typechain/* artifacts-zk/* artifacts/*; hardhat compile",
+    "compile:testnet": "hardhat compile --network zkSyncTestnet",
     "test": "NODE_ENV=local hardhat test --no-compile",
     "test:compile": "NODE_ENV=local hardhat test",
     "test:testnet": "NODE_ENV=testnet hardhat test --network zkSyncTestnet",
-    "deploy:testnet": "hardhat deploy-zksync --network zkSyncTestnet",
-    "deploy:mainnet": "hardhat deploy-zksync --network zkSyncMainnet"
+    "deploy:testnet": "hardhat deploy-zksync --network zkSyncTestnet --script",
+    "deploy:mainnet": "hardhat deploy-zksync --network zkSyncMainnet --script",
+    "verify:testnet": "hardhat verify --network zkSyncTestnet",
+    "verify:mainnet": "hardhat verify --network zkSyncMainnet"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",
@@ -17,6 +24,7 @@
     "@matterlabs/hardhat-zksync-deploy": "^0.6.3",
     "@matterlabs/hardhat-zksync-solc": "^0.3.14",
     "@matterlabs/hardhat-zksync-toolbox": "^0.1.1",
+    "@matterlabs/hardhat-zksync-upgradable": "^0.0.1-alpha.2",
     "@matterlabs/hardhat-zksync-verify": "^0.1.5",
     "@matterlabs/hardhat-zksync-vyper": "^0.1.7",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
@@ -25,7 +33,9 @@
     "@nomiclabs/hardhat-ethers": "^2.2.2",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-waffle": "^2.0.5",
+    "@openzeppelin/hardhat-upgrades": "^1.26.0",
     "@openzeppelin/test-helpers": "^0.5.16",
+    "@pythnetwork/pyth-sdk-solidity": "^2.2.1",
     "@typechain/ethers-v5": "^10.2.0",
     "@typechain/hardhat": "^6.1.5",
     "@types/chai": "^4.3.4",
@@ -49,9 +59,15 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
-    "@openzeppelin/contracts-upgradeable": "^4.8.3"
+    "@openzeppelin/contracts-upgradeable": "^4.8.3",
+    "@pythnetwork/pyth-evm-js": "^1.16.1",
+    "hardhat-preprocessor": "^0.1.5"
   },
+  "files": [
+    "typechain",
+    "artifacts-zk"
+  ],
   "engines": {
-    "node": ">=16.0.0 <=18.16.0"
+    "node": ">=14.16.1"
   }
 }

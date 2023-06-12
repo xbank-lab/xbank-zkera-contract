@@ -7,9 +7,12 @@ import { deployBaseJumpRateModelV2 } from "./utils/deploy";
 
 dotEnvConfig();
 
-// REVIEW VARIABLES CAREFULLY
+// ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const interestModelConfig = INTEREST_RATE_MODEL.IRM_STABLES_Updateable;
+// ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
+// ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   // Create deployer object and load the artifact of the contract we want to deploy.
@@ -24,4 +27,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(
     `# BaseJumpRateModelV2_Stables deployed at: ${baseJumpRateModelV2_Stables.address}`
   );
+  console.log(`# Deployed BaseJumpRateModelV2 config:
+  baseRatePerSec = ${await baseJumpRateModelV2_Stables.baseRatePerSec()}
+  multiplierPerSec: ${await baseJumpRateModelV2_Stables.multiplierPerSec()}
+  jumpMultiplierPerSec: ${await baseJumpRateModelV2_Stables.jumpMultiplierPerSec()}
+  kink: ${await baseJumpRateModelV2_Stables.kink()}`);
 }

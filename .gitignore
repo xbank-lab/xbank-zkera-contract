@@ -25,4 +25,4 @@ typechain-types
 cache
 artifacts
 
-.vscode/settings.json
+.upgradable/zkSync-local-setup.json

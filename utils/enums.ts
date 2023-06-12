@@ -4,8 +4,8 @@ export enum InterestRateModelType {
   BaseJumpRateModelV2,
 }
 
-export enum CTokenType {
-  CErc20Delegator,
-  CErc20,
-  CEther,
+export enum XTokenType {
+  XErc20Proxy,
+  XErc20Immutable,
+  XEtherImmutable,
 }

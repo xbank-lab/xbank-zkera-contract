@@ -1,20 +1,23 @@
 import { BigNumber } from "ethers";
 import { Wallet } from "zksync-web3";
 import { utils } from "zksync-web3/build/src";
-import { CErc20, CErc20__factory, CEther, CToken } from "../../typechain";
-import { CTokenLike } from "../../utils/interfaces";
+import {
+  XErc20Impl,
+  XErc20Impl__factory,
+  XEtherImmutable,
+} from "../../typechain";
+import { XTokenLike } from "../../utils/interfaces";
 import { ERC20Like } from "./../../utils/interfaces";
-import { type } from "os";
 
 export async function getERC20Balance(
-  erc20: ERC20Like | CTokenLike,
+  erc20: ERC20Like | XTokenLike,
   wallet: Wallet
 ): Promise<BigNumber> {
   return await erc20.balanceOf(wallet.address);
 }
 
 export async function getERC20AddressBalance(
-  erc20: ERC20Like | CTokenLike,
+  erc20: ERC20Like | XTokenLike,
   address: string
 ): Promise<BigNumber> {
   return await erc20.balanceOf(address);
@@ -42,7 +45,7 @@ export async function distributeERC20(
 }
 
 export async function approveERC20(
-  erc20: ERC20Like | CTokenLike,
+  erc20: ERC20Like | XTokenLike,
   approver: Wallet,
   spenderAddress: string,
   amount: BigNumber
@@ -70,24 +73,24 @@ export async function getETHBalance(wallet: Wallet): Promise<BigNumber> {
 }
 
 export async function _simulateMintCErc20(
-  cToken: CErc20,
+  xToken: XErc20Impl,
   wallet: Wallet,
   amount: BigNumber
 ): Promise<void> {
   let tx;
   // approve
-  const erc20 = CErc20__factory.connect(await cToken.underlying(), wallet);
-  tx = await erc20.connect(wallet).approve(cToken.address, amount);
+  const erc20 = XErc20Impl__factory.connect(await xToken.underlying(), wallet);
+  tx = await erc20.connect(wallet).approve(xToken.address, amount);
   await tx.wait();
-  tx = await cToken.connect(wallet).mint(amount);
+  tx = await xToken.connect(wallet).mint(amount);
   await tx.wait();
 }
 
 export async function _simulateMintCEther(
-  cETH: CEther,
+  xETH: XEtherImmutable,
   wallet: Wallet,
   amount: BigNumber
 ): Promise<void> {
-  const tx = await cETH.connect(wallet).mint({ value: amount });
+  const tx = await xETH.connect(wallet).mint({ value: amount });
   await tx.wait();
 }
