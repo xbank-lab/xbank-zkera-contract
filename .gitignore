@@ -1,0 +1,28 @@
+node_modules
+yarn-debug.log*
+yarn-error.log*
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+# Hardhat files
+cache
+cache-zk
+artifacts
+artifacts-zk
+
+
+node_modules
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+# Hardhat files
+cache
+artifacts
+
+.vscode/settings.json

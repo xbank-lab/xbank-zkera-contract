@@ -1,0 +1,20 @@
+{
+  "Comptroller": "",
+  "PriceOracle": "",
+  "markets": [
+    {
+      "id": 0,
+      "symbol": "cETH",
+      "address": "0x"
+    },
+    {
+      "id": 0,
+      "symbol": "cUSDC",
+      "address": "0x"
+    }
+  ],
+  "tokens": {
+    "ETH": "0x0000000000000000000000000000000000000000",
+    "USDC": "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4"
+  }
+}
