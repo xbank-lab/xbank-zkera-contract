@@ -1607,39 +1607,39 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
    * @param holder The address to claim COMP for
    */
   function pendingComp(address holder) external view returns (uint) {
-    uint holderPendingComp = 0;
+    uint holderPendingComp = compAccrued[holder];
     for (uint i = 0; i < allMarkets.length; i++) {
       XTokenBase cToken = allMarkets[i];
       require(markets[address(cToken)].isListed, "market must be listed");
       // borrow side
-      Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+      Exp memory borrowIndex = Exp({ mantissa: cToken.borrowIndex() });
       CompMarketState memory borrowState = calculatePendingCompBorrowIndex(
-        address(cToken), 
+        address(cToken),
         borrowIndex
       );
-      uint borrowAccrued = calculatePendingDistributeBorrowerComp(
+      uint borrowAccruedDelta = calculatePendingBorrowerCompDelta(
         address(cToken),
         holder,
         borrowIndex,
         borrowState
       );
-      holderPendingComp = add_(holderPendingComp, borrowAccrued);
+      holderPendingComp = add_(holderPendingComp, borrowAccruedDelta);
 
       // supply side
       CompMarketState memory supplyState = calculatePendingCompSupplyIndex(
         address(cToken)
       );
-      uint supplyAccrued = calculatePendingDistributeSupplierComp(
+      uint supplyAccruedDelta = calculatePendingSupplierCompDelta(
         address(cToken),
         holder,
         supplyState
       );
-      holderPendingComp = add_(holderPendingComp, supplyAccrued);
+      holderPendingComp = add_(holderPendingComp, supplyAccruedDelta);
     }
     return holderPendingComp;
   }
 
-  function calculatePendingCompBorrowIndex (
+  function calculatePendingCompBorrowIndex(
     address cToken,
     Exp memory marketBorrowIndex
   ) internal view returns (CompMarketState memory) {
@@ -1667,7 +1667,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return borrowState;
   }
 
-  function calculatePendingDistributeBorrowerComp (
+  function calculatePendingBorrowerCompDelta(
     address cToken,
     address borrower,
     Exp memory marketBorrowIndex,
@@ -1692,12 +1692,10 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
     // Calculate COMP accrued: cTokenAmount * accruedPerBorrowedUnit
     uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
-
-    uint borrowerAccrued = add_(compAccrued[borrower], borrowerDelta);
-    return borrowerAccrued;
+    return borrowerDelta;
   }
 
-  function calculatePendingCompSupplyIndex (
+  function calculatePendingCompSupplyIndex(
     address cToken
   ) internal view returns (CompMarketState memory) {
     CompMarketState memory supplyState = compSupplyState[cToken];
@@ -1727,7 +1725,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
     return supplyState;
   }
 
-  function calculatePendingDistributeSupplierComp (
+  function calculatePendingSupplierCompDelta(
     address cToken,
     address supplier,
     CompMarketState memory supplyState
@@ -1748,9 +1746,7 @@ contract XesImpl is XesStorage, XesAbstract, XesError, ExponentialNoError {
 
     // Calculate COMP accrued: cTokenAmount * accruedPerCToken
     uint supplierDelta = mul_(supplierTokens, deltaIndex);
-
-    uint supplierAccrued = add_(compAccrued[supplier], supplierDelta);
-    return supplierAccrued;
+    return supplierDelta;
   }
 
   /**
