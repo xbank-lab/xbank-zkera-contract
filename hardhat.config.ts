@@ -13,6 +13,10 @@ import "@matterlabs/hardhat-zksync-chai-matchers";
 import "@matterlabs/hardhat-zksync-verify";
 import "@matterlabs/hardhat-zksync-upgradable";
 
+import dotEnv from "dotenv";
+
+dotEnv.config();
+
 const chainIds = {
   goerli: 5,
   hardhat: 31337,
@@ -31,7 +35,7 @@ const zkSyncTestnet =
       }
     : {
         url: "https://zksync2-testnet.zksync.dev",
-        ethNetwork: "goerli",
+        ethNetwork: process.env.GOERLI_RPC_URL ?? "",
         zksync: true,
         verifyURL:
           "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
@@ -74,7 +78,7 @@ module.exports = {
     zkSyncTestnet,
     zkSyncMainnet: {
       url: "https://mainnet.era.zksync.io",
-      ethNetwork: "mainnet",
+      ethNetwork: process.env.MAINNET_RPC_URL ?? "",
       zksync: true,
     },
   },
@@ -100,6 +104,6 @@ module.exports = {
     }),
   },
   etherscan: {
-    apiKey: "", //<Your API key for Etherscan>,
+    apiKey: "XAAE5BNRFXISSGYYJJTQW1JRZKVU16Y8DX", //<Your API key for Etherscan>,
   },
 };
