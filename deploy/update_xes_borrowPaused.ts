@@ -3,7 +3,7 @@ import { config as dotEnvConfig } from "dotenv";
 import { BigNumber, utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XTokenBase__factory } from "../typechain";
+import { XTokenBase__factory, XesImpl__factory } from "../typechain";
 import { getConfig } from "./config/chain_config";
 
 dotEnvConfig();
@@ -11,30 +11,21 @@ dotEnvConfig();
 // Import chain config.
 const chainConfig = getConfig();
 
-interface XTokenReserveFactor {
+interface XTokenBorrowPaused {
   symbol: string;
   address: string;
-  reserveFactor: BigNumber;
+  paused: boolean;
 }
 
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xTokens: XTokenReserveFactor[] = [
-  // {
-  //   symbol: "xUSDC",
-  //   address: chainConfig.markets.xUSDC,
-  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  // },
-  // {
-  //   symbol: "xETH",
-  //   address: chainConfig.markets.xETH,
-  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  // },
+const xesAddress = chainConfig.Xes;
+const xTokens: XTokenBorrowPaused[] = [
   {
     symbol: "xTVERCC",
     address: chainConfig.markets.xTVERCC,
-    reserveFactor: utils.parseUnits("0.15", 18), // 15%
+    paused: true,
   },
 ];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
@@ -45,18 +36,20 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // set reserveFactor for xTokens
+  const xesAsDeployer = XesImpl__factory.connect(xesAddress, deployer.zkWallet);
+
+  // set BorrowPaused for xTokens at xes
   for (let xToken of xTokens) {
-    const xTokenAsDeployer = XTokenBase__factory.connect(
+    const tx = await xesAsDeployer._setBorrowPaused(
       xToken.address,
-      deployer.zkWallet
+      xToken.paused
     );
-    const prevReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
-    const tx = await xTokenAsDeployer._setReserveFactor(xToken.reserveFactor);
     await tx.wait();
-    const newReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
+    const borrowGuardianPaused = await xesAsDeployer.borrowGuardianPaused(
+      xToken.address
+    );
     console.log(
-      `# update ${await xTokenAsDeployer.symbol()} reserveFactor from ${prevReserveFactor} to ${newReserveFactor}`
+      `# update xes borrowGuardianPaused for ${await xToken.symbol} to ${borrowGuardianPaused}`
     );
   }
 }

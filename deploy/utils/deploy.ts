@@ -11,9 +11,11 @@ import {
 
 import {
   ERC20PresetFixedSupply,
+  GuardSimplePriceOracle,
   JumpRateModelV2,
   Multicall,
   PythPriceUpdater,
+  PythPriceUpdaterWithFallback,
   SimplePriceOracle,
   XErc20Immutable,
   XErc20Impl,
@@ -49,12 +51,31 @@ export async function deploySimplePriceOracle(
   return (await deployer.deploy(artifact)) as SimplePriceOracle;
 }
 
+export async function deployGuardSimplePriceOracle(
+  deployer: Deployer
+): Promise<SimplePriceOracle> {
+  const artifact = await deployer.loadArtifact("GuardSimplePriceOracle");
+  return (await deployer.deploy(artifact)) as GuardSimplePriceOracle;
+}
+
 export async function deployPythPriceUpdater(
   deployer: Deployer,
   pythContract: string
 ): Promise<PythPriceUpdater> {
   const artifact = await deployer.loadArtifact("PythPriceUpdater");
   return (await deployer.deploy(artifact, [pythContract])) as PythPriceUpdater;
+}
+
+export async function deployPythPriceUpdaterWithFallback(
+  deployer: Deployer,
+  pythContract: string,
+  simplePriceOracle: string
+): Promise<PythPriceUpdaterWithFallback> {
+  const artifact = await deployer.loadArtifact("PythPriceUpdaterWithFallback");
+  return (await deployer.deploy(artifact, [
+    pythContract,
+    simplePriceOracle,
+  ])) as PythPriceUpdaterWithFallback;
 }
 
 export async function deployXes(deployer: Deployer): Promise<XesImpl> {

@@ -1,62 +1,42 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
-import { BigNumber, utils } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XTokenBase__factory } from "../typechain";
 import { getConfig } from "./config/chain_config";
+import {
+  GuardSimplePriceOracle__factory,
+  PythPriceUpdaterWithFallback__factory,
+} from "../typechain";
 
 dotEnvConfig();
 
 // Import chain config.
 const chainConfig = getConfig();
 
-interface XTokenReserveFactor {
-  symbol: string;
-  address: string;
-  reserveFactor: BigNumber;
-}
-
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xTokens: XTokenReserveFactor[] = [
-  // {
-  //   symbol: "xUSDC",
-  //   address: chainConfig.markets.xUSDC,
-  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  // },
-  // {
-  //   symbol: "xETH",
-  //   address: chainConfig.markets.xETH,
-  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  // },
-  {
-    symbol: "xTVERCC",
-    address: chainConfig.markets.xTVERCC,
-    reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  },
-];
+const guardSimplePriceOracleAddress = chainConfig.guardSimplePriceOracle;
+const feeder = chainConfig.pythPriceUpdaterWithFallback;
+const isFeeder = true;
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
+// An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
+  let tx;
+
   // Create deployer object and load the artifact of the contract we want to deploy.
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  // set reserveFactor for xTokens
-  for (let xToken of xTokens) {
-    const xTokenAsDeployer = XTokenBase__factory.connect(
-      xToken.address,
+  const guardSimplePriceOracleAsDeployer =
+    GuardSimplePriceOracle__factory.connect(
+      guardSimplePriceOracleAddress,
       deployer.zkWallet
     );
-    const prevReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
-    const tx = await xTokenAsDeployer._setReserveFactor(xToken.reserveFactor);
-    await tx.wait();
-    const newReserveFactor = await xTokenAsDeployer.reserveFactorMantissa();
-    console.log(
-      `# update ${await xTokenAsDeployer.symbol()} reserveFactor from ${prevReserveFactor} to ${newReserveFactor}`
-    );
-  }
+
+  tx = await guardSimplePriceOracleAsDeployer.setFeeder(feeder, isFeeder);
+  await tx.wait();
+  console.log(`# Set feeder ${feeder} allow to update price: ${isFeeder}`);
 }

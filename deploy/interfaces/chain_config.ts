@@ -8,12 +8,16 @@ export interface Config {
   pyth: string; // Pyth's
   pythNetworkEndpoint: string; // Pyth's
   pythPriceUpdater: string; // xBank's
+  simplePriceOracle: string;
+  pythPriceUpdaterWithFallback: string;
+  guardSimplePriceOracle: string;
   pythIDs: PythIDs;
 }
 
 export interface InterestRateModels {
   xETH: string;
   xUSDC: string;
+  zero: string;
 }
 export interface Governance {
   esXB: string;
@@ -22,12 +26,14 @@ export interface Governance {
 export interface Markets {
   xETH: string;
   xUSDC: string;
+  xTVERCC: string;
 }
 
 export interface Tokens {
   ETH: string;
   USDC: string;
   USDT?: string;
+  TVERCC?: string;
 }
 
 export interface PythIDs {
