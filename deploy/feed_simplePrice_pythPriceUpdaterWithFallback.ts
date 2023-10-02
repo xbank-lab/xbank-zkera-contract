@@ -22,7 +22,7 @@ const chainConfig = getConfig();
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const pythPriceUpdaterWithFallbackAddress =
   chainConfig.pythPriceUpdaterWithFallback;
-const xtokenAddress = chainConfig.markets.xTVERCC;
+const xtokenAddress = chainConfig.markets.xUSDC;
 const underlyingPriceUSD = "1";
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░

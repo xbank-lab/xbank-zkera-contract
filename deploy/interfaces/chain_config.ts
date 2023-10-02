@@ -26,14 +26,12 @@ export interface Governance {
 export interface Markets {
   xETH: string;
   xUSDC: string;
-  xTVERCC: string;
 }
 
 export interface Tokens {
   ETH: string;
   USDC: string;
   USDT?: string;
-  TVERCC?: string;
 }
 
 export interface PythIDs {

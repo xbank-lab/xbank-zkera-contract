@@ -46,34 +46,24 @@ export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
 };
 
 export const XTOKEN_DEPLOY_ARGS: XTokenDeployArg[] = [
-  // {
-  //   name: "xBank Ether",
-  //   symbol: "xETH",
-  //   underlyingToken: "ETH",
-  //   underlying: constants.AddressZero,
-  //   type: XTokenType.XEtherImmutable,
-  //   interestRateModel: chainConfig.InterestRateModels.xETH,
-  //   initialExchangeRate: "200000000000000000000000000", // 0.02
-  //   decimals: 8,
-  // },
-  // {
-  //   name: "xBank USD Coin",
-  //   symbol: "xUSDC",
-  //   underlyingToken: "USDC",
-  //   underlying: chainConfig.tokens.USDC,
-  //   type: XTokenType.XErc20Immutable,
-  //   interestRateModel: chainConfig.InterestRateModels.xUSDC,
-  //   initialExchangeRate: "200000000000000", // 0.02
-  //   decimals: 8,
-  // },
   {
-    name: "xBank TVERCC",
-    symbol: "xTVERCC",
-    underlyingToken: "TVERCC",
-    underlying: chainConfig.tokens.TVERCC,
+    name: "xBank Ether",
+    symbol: "xETH",
+    underlyingToken: "ETH",
+    underlying: constants.AddressZero,
+    type: XTokenType.XEtherImmutable,
+    interestRateModel: chainConfig.InterestRateModels.xETH,
+    initialExchangeRate: "200000000000000000000000000", // 0.02
+    decimals: 8,
+  },
+  {
+    name: "xBank USD Coin",
+    symbol: "xUSDC",
+    underlyingToken: "USDC",
+    underlying: chainConfig.tokens.USDC,
     type: XTokenType.XErc20Immutable,
-    interestRateModel: chainConfig.InterestRateModels.zero,
-    initialExchangeRate: "1000000000000000000", // 1
-    decimals: 0,
+    interestRateModel: chainConfig.InterestRateModels.xUSDC,
+    initialExchangeRate: "200000000000000", // 0.02
+    decimals: 8,
   },
 ];

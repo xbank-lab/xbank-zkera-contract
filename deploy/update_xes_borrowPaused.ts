@@ -23,8 +23,8 @@ const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const xesAddress = chainConfig.Xes;
 const xTokens: XTokenBorrowPaused[] = [
   {
-    symbol: "xTVERCC",
-    address: chainConfig.markets.xTVERCC,
+    symbol: "xUSDC",
+    address: chainConfig.markets.xUSDC,
     paused: true,
   },
 ];
