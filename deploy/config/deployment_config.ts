@@ -73,7 +73,7 @@ export const XTOKEN_DEPLOY_ARGS: XTokenDeployArg[] = [
     underlying: chainConfig.tokens.wBTC,
     type: XTokenType.XErc20Immutable,
     interestRateModel: chainConfig.InterestRateModels.xETH,
-    initialExchangeRate: "200000000000000", // 0.02
+    initialExchangeRate: "20000000000000000", // 0.02
     decimals: 8,
   },
 ];
