@@ -2,8 +2,11 @@ import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XesImpl__factory } from "./../typechain/factories/contracts/Xes/XesImpl__factory";
 import { getConfig } from "./config/chain_config";
+import {
+  deployPythPriceUpdater,
+  deployPythPriceUpdaterWithFallback,
+} from "./utils/deploy";
 
 dotEnvConfig();
 
@@ -13,27 +16,30 @@ const chainConfig = getConfig();
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xesAddress = chainConfig.Xes;
-const newPriceOracle = chainConfig.pythPriceUpdaterWithFallback;
+const pythContract = chainConfig.pyth;
+const simplePriceOracle = chainConfig.guardSimplePriceOracle;
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
+// An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
-  let tx;
-
   // Create deployer object and load the artifact of the contract we want to deploy.
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  const xesAsDeployer = XesImpl__factory.connect(xesAddress, deployer.zkWallet);
-  const oldPriceOracle = await xesAsDeployer.oracle();
-
-  // update priceOracle
-  tx = await xesAsDeployer._setPriceOracle(newPriceOracle);
-  await tx.wait();
+  // deploy price oracle
+  const pythPriceUpdaterWithFallback = await deployPythPriceUpdaterWithFallback(
+    deployer,
+    pythContract,
+    simplePriceOracle
+  );
   console.log(
-    `# update xes ${
-      xesAsDeployer.address
-    } priceOracle from ${oldPriceOracle} to ${await xesAsDeployer.oracle()}`
+    `# PythPriceUpdaterWithFallback deployed at: ${pythPriceUpdaterWithFallback.address}`
+  );
+  console.log(
+    `# PythPriceUpdaterWithFallback using Pyth contract: ${await pythPriceUpdaterWithFallback.pyth()}`
+  );
+  console.log(
+    `# PythPriceUpdaterWithFallback using SimplePriceOracle contract: ${await pythPriceUpdaterWithFallback.simplePriceOracle()}`
   );
 }

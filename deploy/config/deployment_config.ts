@@ -33,6 +33,16 @@ export const INTEREST_RATE_MODEL: InterestRateModelConfigs = {
       kink: "850000000000000000",
     },
   },
+  IRM_ZERO_Updateable: {
+    name: "IRM_ZERO_Updateable",
+    type: InterestRateModelType.BaseJumpRateModelV2,
+    args: {
+      baseRatePerYear: "0",
+      multiplierPerYear: "0",
+      jumpMultiplierPerYear: "0",
+      kink: "850000000000000000",
+    },
+  },
 };
 
 export const XTOKEN_DEPLOY_ARGS: XTokenDeployArg[] = [

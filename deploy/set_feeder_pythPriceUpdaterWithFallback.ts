@@ -2,8 +2,8 @@ import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { config as dotEnvConfig } from "dotenv";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Wallet } from "zksync-web3";
-import { XesImpl__factory } from "./../typechain/factories/contracts/Xes/XesImpl__factory";
 import { getConfig } from "./config/chain_config";
+import { PythPriceUpdaterWithFallback__factory } from "../typechain";
 
 dotEnvConfig();
 
@@ -13,11 +13,14 @@ const chainConfig = getConfig();
 // ▄▄ ▄▄ ▄▄  ▄▀█ ▀█▀ ▀█▀ █▀▀ █▄░█ ▀█▀ █ █▀█ █▄░█ █  ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
-const xesAddress = chainConfig.Xes;
-const newPriceOracle = chainConfig.pythPriceUpdaterWithFallback;
+const pythPriceUpdaterWithFallbackAddress =
+  chainConfig.pythPriceUpdaterWithFallback;
+const feeder = "";
+const isFeeder = true;
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄
 // ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
 
+// An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
   let tx;
 
@@ -25,15 +28,13 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
   console.log("# Deployer address:", deployer.zkWallet.address);
 
-  const xesAsDeployer = XesImpl__factory.connect(xesAddress, deployer.zkWallet);
-  const oldPriceOracle = await xesAsDeployer.oracle();
+  const pythPriceUpdaterAsDeployer =
+    PythPriceUpdaterWithFallback__factory.connect(
+      pythPriceUpdaterWithFallbackAddress,
+      deployer.zkWallet
+    );
 
-  // update priceOracle
-  tx = await xesAsDeployer._setPriceOracle(newPriceOracle);
+  tx = await pythPriceUpdaterAsDeployer.setFeeder(feeder, isFeeder);
   await tx.wait();
-  console.log(
-    `# update xes ${
-      xesAsDeployer.address
-    } priceOracle from ${oldPriceOracle} to ${await xesAsDeployer.oracle()}`
-  );
+  console.log(`# Set feeder ${feeder} allow to update price: ${isFeeder}`);
 }
