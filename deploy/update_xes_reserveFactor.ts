@@ -21,14 +21,19 @@ interface XTokenReserveFactor {
 // ░░ ░░ ░░  █▀█ ░█░ ░█░ ██▄ █░▀█ ░█░ █ █▄█ █░▀█ ▄  ░░ ░░ ░░
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const xTokens: XTokenReserveFactor[] = [
+  // {
+  //   symbol: "xUSDC",
+  //   address: chainConfig.markets.xUSDC,
+  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
+  // },
+  // {
+  //   symbol: "xETH",
+  //   address: chainConfig.markets.xETH,
+  //   reserveFactor: utils.parseUnits("0.15", 18), // 15%
+  // },
   {
-    symbol: "xUSDC",
-    address: chainConfig.markets.xUSDC,
-    reserveFactor: utils.parseUnits("0.15", 18), // 15%
-  },
-  {
-    symbol: "xETH",
-    address: chainConfig.markets.xETH,
+    symbol: "xWBTC",
+    address: chainConfig.markets.xWBTC,
     reserveFactor: utils.parseUnits("0.15", 18), // 15%
   },
 ];

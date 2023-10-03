@@ -21,15 +21,20 @@ const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const pythPriceUpdaterWithFallbackAddress =
   chainConfig.pythPriceUpdaterWithFallback;
 const xTokenPyths: XTokenPyth[] = [
+  // {
+  //   symbol: "xUSDC",
+  //   address: chainConfig.markets.xUSDC,
+  //   pythID: chainConfig.pythIDs.USDC,
+  // },
+  // {
+  //   symbol: "xETH",
+  //   address: chainConfig.markets.xETH,
+  //   pythID: chainConfig.pythIDs.ETH,
+  // },
   {
-    symbol: "xUSDC",
-    address: chainConfig.markets.xUSDC,
-    pythID: chainConfig.pythIDs.USDC,
-  },
-  {
-    symbol: "xETH",
-    address: chainConfig.markets.xETH,
-    pythID: chainConfig.pythIDs.ETH,
+    symbol: "xWBTC",
+    address: chainConfig.markets.xWBTC,
+    pythID: chainConfig.pythIDs.wBTC,
   },
 ];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄

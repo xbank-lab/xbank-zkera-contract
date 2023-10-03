@@ -24,15 +24,20 @@ const pythPriceUpdaterWithFallbackAddress =
   chainConfig.pythPriceUpdaterWithFallback;
 const pythNetworkEndpoint = chainConfig.pythNetworkEndpoint;
 const xTokenPyths: XTokenPyth[] = [
+  // {
+  //   symbol: "xUSDC",
+  //   address: chainConfig.markets.xUSDC,
+  //   pythID: chainConfig.pythIDs.USDC,
+  // },
+  // {
+  //   symbol: "xETH",
+  //   address: chainConfig.markets.xETH,
+  //   pythID: chainConfig.pythIDs.ETH,
+  // },
   {
-    symbol: "xUSDC",
-    address: chainConfig.markets.xUSDC,
-    pythID: chainConfig.pythIDs.USDC,
-  },
-  {
-    symbol: "xETH",
-    address: chainConfig.markets.xETH,
-    pythID: chainConfig.pythIDs.ETH,
+    symbol: "xWBTC",
+    address: chainConfig.markets.xWBTC,
+    pythID: chainConfig.pythIDs.wBTC,
   },
 ];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄

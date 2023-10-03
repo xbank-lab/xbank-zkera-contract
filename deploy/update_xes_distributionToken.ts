@@ -30,14 +30,20 @@ const xTokenDistributionSpeeds: xTokenDistributionSpeed[] = [
   {
     symbol: "xUSDC",
     address: chainConfig.markets.xUSDC,
-    supplySpeedPerSec: BigNumber.from("20370370370370400"),
-    borrowSpeedPerSec: BigNumber.from("30555555555555600"),
+    supplySpeedPerSec: BigNumber.from("11640211640211600"),
+    borrowSpeedPerSec: BigNumber.from("17460317460317500"),
   },
   {
     symbol: "xETH",
     address: chainConfig.markets.xETH,
-    supplySpeedPerSec: BigNumber.from("13580246913580200"),
-    borrowSpeedPerSec: BigNumber.from("20370370370370400"),
+    supplySpeedPerSec: BigNumber.from("7760141093474430"),
+    borrowSpeedPerSec: BigNumber.from("11640211640211600"),
+  },
+  {
+    symbol: "xWBTC",
+    address: chainConfig.markets.xWBTC,
+    supplySpeedPerSec: BigNumber.from("7760141093474430"),
+    borrowSpeedPerSec: BigNumber.from("11640211640211600"),
   },
 ];
 // ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄

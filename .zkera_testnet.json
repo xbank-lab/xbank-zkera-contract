@@ -10,7 +10,8 @@
   },
   "markets": {
     "xETH": "0x5FB959Ade9d25fab92e4F4a06E32759c6E27FB0a",
-    "xUSDC": "0x01104C61457395038FaD3240a4CBB0EB35912efb"
+    "xUSDC": "0x01104C61457395038FaD3240a4CBB0EB35912efb",
+    "xWBTC": "0x15fCe33DEE1259830045076C024B46b6695a6e46"
   },
   "tokens": {
     "ETH": "0x0000000000000000000000000000000000000000",
@@ -27,6 +28,7 @@
   "pythNetworkEndpoint": "https://xc-testnet.pyth.network",
   "pythIDs": {
     "ETH": "0xca80ba6dc32e08d06f1aa886011eed1d77c77be9eb761cc10d72b7d0a2fd57a6",
-    "USDC": "0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f2e47ab0f84fb9e7ae722"
+    "USDC": "0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f2e47ab0f84fb9e7ae722",
+    "wBTC": "0xea0459ab2954676022baaceadb472c1acc97888062864aa23e9771bae3ff36ed"
   }
 }

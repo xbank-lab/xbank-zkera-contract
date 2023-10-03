@@ -22,14 +22,19 @@ interface xTokenCollateralFactor {
 const deployerWallet = new Wallet(process.env.DEPLOYER_PK as string);
 const xesAddress = chainConfig.Xes;
 const xTokenCollateralFactors: xTokenCollateralFactor[] = [
+  // {
+  //   symbol: "xUSDC",
+  //   address: chainConfig.markets.xUSDC,
+  //   collateralFactor: utils.parseUnits("0.855", 18), // 85.5%
+  // },
+  // {
+  //   symbol: "xETH",
+  //   address: chainConfig.markets.xETH,
+  //   collateralFactor: utils.parseUnits("0.825", 18), // 82.5%
+  // },
   {
-    symbol: "xUSDC",
-    address: chainConfig.markets.xUSDC,
-    collateralFactor: utils.parseUnits("0.855", 18), // 85.5%
-  },
-  {
-    symbol: "xETH",
-    address: chainConfig.markets.xETH,
+    symbol: "xWBTC",
+    address: chainConfig.markets.xWBTC,
     collateralFactor: utils.parseUnits("0.825", 18), // 82.5%
   },
 ];
