@@ -11,7 +11,7 @@
   "markets": {
     "xETH": "0xE4622A57Ab8F4168b80015BBA28fA70fb64fa246",
     "xUSDC": "0xe62b571E9F40D158cB20796C56E93475d896c56D",
-    "xWBTC": ""
+    "xWBTC": "0x4f91F1321B3e686a93763A9B42E7D6Ce6E999a78"
   },
   "tokens": {
     "ETH": "0x0000000000000000000000000000000000000000",
@@ -22,8 +22,8 @@
   "pyth": "0xf087c864AEccFb6A2Bf1Af6A0382B0d0f6c5D834",
   "pythPriceUpdater": "0x69C5B8224B64A40Edd605ddf35F1c77a8Adf91dA",
   "simplePriceOracle": "",
-  "pythPriceUpdaterWithFallback": "",
-  "guardSimplePriceOracle": "",
+  "pythPriceUpdaterWithFallback": "0x4CbF44C4A0EEDAc6Eaa24fF8643eD5F1eEE181e1",
+  "guardSimplePriceOracle": "0x1c45823b5e420C5b06126f7cF06C944c830a25E2",
   "pythNetworkEndpoint": "https://xc-mainnet.pyth.network",
   "pythIDs": {
     "ETH": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
