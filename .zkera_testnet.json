@@ -25,7 +25,7 @@
   "simplePriceOracle": "0x78913904897Ce7436Eee67F3539132d412667A07",
   "pythPriceUpdaterWithFallback": "0x954c03f95545a5a122746938fecdbc18F5ec50C9",
   "guardSimplePriceOracle": "0x8Fbeafa407D24d1DE0c799305892142e8Ec31A1b",
-  "pythNetworkEndpoint": "https://xc-testnet.pyth.network",
+  "pythNetworkEndpoint": "https://hermes-beta.pyth.network",
   "pythIDs": {
     "ETH": "0xca80ba6dc32e08d06f1aa886011eed1d77c77be9eb761cc10d72b7d0a2fd57a6",
     "USDC": "0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f2e47ab0f84fb9e7ae722",
