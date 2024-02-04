@@ -22,16 +22,19 @@ export interface Governance {
 export interface Markets {
   xETH: string;
   xUSDC: string;
+  xWBTC: string;
 }
 
 export interface Tokens {
   ETH: string;
   USDC: string;
   USDT?: string;
+  WBTC?: string;
 }
 
 export interface PythIDs {
   ETH: string;
   USDC: string;
+  WBTC: string;
   USDT?: string;
 }
